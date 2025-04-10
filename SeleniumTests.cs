@@ -88,7 +88,7 @@ namespace SeleniumDemo
 
             AcceptPopups();
             Thread.Sleep(delayUserInteraction);
-            if (Blocked() || BlockedInfonPage())
+            if (Blocked() || BlockedInfOnPage())
             {
                 Assert.Fail("Blocked on page");
             }  
@@ -96,23 +96,32 @@ namespace SeleniumDemo
             var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
   
             Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
-            Console.WriteLine($"Number of job entries found: {jobNodes.Count}");
+            TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
         }
-        private bool BlockedInfonPage() {
-            if (driver.FindElements(By.XPath("//*[contains(text(), 'blockerad')]")).Count > 0) {
-                return true;
+        private bool BlockedInfOnPage() 
+        {
+            if (driver.FindElements(By.XPath("//*[contains(text(), 'blockerad')]")).Count > 0) 
+            {
+                string[] xPaths = new string[]
+                {
+                    "//*[contains(text(), 'blockerad')]",
+                    "//*[contains(text(), 'captcha')]",
+                    "//*[contains(@id, 'captcha')]",
+                    "//*[contains(@class, 'captcha')]"
+                };
+
+                foreach (var xPath in xPaths) 
+                {
+                    if (driver.FindElements(By.XPath(xPath)).Count > 0) 
+                    {
+                        TestContext.WriteLine($"BlockedInfoOnPage(): {xPath}");
+                        return true;
+                    }
                 }
-            if (driver.FindElements(By.XPath("//*[contains(text(), 'captcha')]")).Count > 0) {
                 return true;
-                }
-            if (driver.FindElements(By.XPath("//*[contains(@id, 'captcha')]")).Count > 0) {
-                return true;
-                }
-            if (driver.FindElements(By.XPath("//*[contains(@class, 'captcha')]")).Count > 0) {
-                return true;
-                }
-            return false;
             }
+            return false;
+        }
 
         private bool Blocked() {
             try {
