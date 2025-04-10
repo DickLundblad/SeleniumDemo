@@ -116,12 +116,86 @@ namespace SeleniumDemo
                 var jobListing = new JobListing();
                 jobListing.JobLink = ExtractHref(addDomainToJobPaths, node);
                 jobListings.Add(jobListing);
+                Assert.That(jobListing.JobLink, Is.Not.Empty, "Job link is empty"); 
+            }
+        }
+
+        [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "https://jobbsafari.se")]
+        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]","")]
+        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]","")]
+        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']","", 2000)]
+        [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "")]
+        public void ValidateThatJoblinksCanBeRetrievedAndParsed(string url, string selectorXPathForJobEntry, string addDomainToJobPaths = "", int delayUserInteraction=0) 
+        {
+            ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
+            driver.SwitchTo().Window(driver.WindowHandles.Last());
+            driver.Navigate().GoToUrl(url);
+
+            AcceptPopups();
+            Thread.Sleep(delayUserInteraction);
+            Assert.That(BlockedInfoOnPage(), Is.False, "Blocked on page");
+
+            var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
+
+            Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
+            TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
+            List<JobListing> jobListings = [];
+            foreach (var node in jobNodes)
+            {
+                var jobListing = new JobListing();
+                jobListing.JobLink = ExtractHref(addDomainToJobPaths, node);
+                jobListings.Add(jobListing);
              }
+            foreach (var jobListing in jobListings) 
+            {       
+                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
+                jobListing.Title = updatedJobListing.Title;
+                jobListing.Published = updatedJobListing.Published;
+                jobListing.EndDate = updatedJobListing.EndDate;
+                jobListing.ContactInformation = updatedJobListing.ContactInformation;
+                jobListing.Description = updatedJobListing.Description;
+                jobListing.ApplyLink = updatedJobListing.ApplyLink;
+              }
 
             var fileName = RemoveInvalidChars(ReplaceBadCharactersInFilePath(url));
             var tsvFilePath = $"JobListings_{fileName}.tsv";
             WriteToFile(jobListings, tsvFilePath);
         }
+
+        [TestCase("https://jobbsafari.se/jobb/digital-radio-system-designer-sesri-19207406", 0)]
+        [TestCase("https://www.linkedin.com/jobs/view/4194781616/?eBP=BUDGET_EXHAUSTED_JOB&refId=wqmOM1Whbos%2BqR2hax6d%2BQ%3D%3D&trackingId=Y31jWZzmfvJYm7mUln7UBQ%3D%3D&trk=flagship3_job_collections_leaf_page", 0)]
+        [TestCase("https://se.jooble.org/desc/-154934751721925931?ckey=NONE&rgn=-1&pos=1&elckey=3819297206643930044&pageType=20&p=1&jobAge=2608&relb=140&brelb=100&bscr=112&scr=156.8&premImp=1", 0)]
+        [TestCase("https://jobbsafari.se/jobb/solution-architect-intralogistics-development-supply-chain-development-siske-19207507", 0)]
+        public void ValidateThatJobLinkCanBeOpened(string url, int delayUserInteraction=0) 
+        {
+            var jobListing = OpenAndParseJobLink(url, delayUserInteraction);
+            // JobLink can change if it's a re-direct, but we will keep the original UR
+            Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
+            TestContext.WriteLine($"Job title: {jobListing.Title}");
+            }
+
+        private JobListing OpenAndParseJobLink(string url, int delayUserInteraction) {
+            var jobListing = new JobListing();
+            jobListing.JobLink = url;
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
+            driver.SwitchTo().Window(driver.WindowHandles.Last());
+            driver.Navigate().GoToUrl(url);
+
+            AcceptPopups();
+            Thread.Sleep(delayUserInteraction);
+            Assert.That(BlockedInfoOnPage(), Is.False, "Blocked on page");
+
+            var bodyNode = driver.FindElement(By.XPath("//body"));
+
+
+            var titleNode = driver.FindElement(By.XPath("//h1"));
+            jobListing.Title = titleNode.Text;
+            TestContext.WriteLine($"jobListing.Title: {jobListing.Title}");
+
+           TestContext.WriteLine($"Body text: {bodyNode.Text}");
+            return jobListing;
+         }
 
         [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*Joblistings*.tsv")]        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern) 
          {
@@ -141,13 +215,11 @@ namespace SeleniumDemo
                 TestContext.WriteLine("No TSV files found.");
                 return;
             }
-            //string outputDirectory = @"C:\path\to\xlsx\output";
             using (var workbook = new XLWorkbook())
             {
                 foreach (var tsvFile in tsvFiles)
                 {
                     string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(tsvFile);
-                    //string xlsxPath = Path.Combine(outputDirectory, fileNameWithoutExtension + ".xlsx");
                     fileNameWithoutExtension = fileNameWithoutExtension.Substring(0,30);
                     var worksheet = workbook.Worksheets.Add(fileNameWithoutExtension);
                     int row = 1;
@@ -230,22 +302,38 @@ namespace SeleniumDemo
             Console.WriteLine($"Invalid chars: {string.Join(", ", invalidCharsForWindowsAndLinux)}");
             return new string(input.Where(ch => !invalidCharsForWindowsAndLinux.Contains(ch)).ToArray());
         }
-        private static string ExtractHref(string addDomainToJobPaths, IWebElement jobNode) 
-        {
-            var jobLink = jobNode.GetAttribute("href");
-            if (string.IsNullOrEmpty(jobLink)) {
-                var anchorTag = jobNode.FindElement(By.TagName("a"));
-                jobLink = anchorTag?.GetAttribute("href");
+
+private static string ExtractHref(string addDomainToJobPaths, IWebElement jobNode) {
+            string jobLink = string.Empty;
+            try {
+                jobLink = RetryFindAttribute(jobNode, "href");
+                if (!string.IsNullOrEmpty(jobLink)) {
+                    jobLink = addDomainToJobPaths + jobLink;
+                    }
+                if (string.IsNullOrEmpty(jobLink)) {
+                    var anchorTag = jobNode.FindElement(By.TagName("a"));
+                    jobLink = RetryFindAttribute(anchorTag, "href");
+                    }
+                if (string.IsNullOrEmpty(jobLink)) {
+                    var innerHtml = RetryFindAttribute(jobNode, "innerHTML");
+                    }
+                TestContext.WriteLine($"Job link: {jobLink}");
+                } catch (Exception ex) {
+                TestContext.WriteLine($"Could not GetAttribute(\"href\") for {ex.InnerException}");
+                throw;
                 }
-            if (string.IsNullOrEmpty(jobLink)) {
-                var innerHtml = jobNode.GetAttribute("innerHTML");
-                TestContext.WriteLine($"innerHTML: {innerHtml}");
-                }
-            if (!string.IsNullOrEmpty(addDomainToJobPaths)) {
-                jobLink = addDomainToJobPaths + jobLink;
-                }
-            TestContext.WriteLine($"Job link: {jobLink}");
             return jobLink;
+            }
+
+        private static string RetryFindAttribute(IWebElement element, string attribute, int retryCount = 3) {
+            while (retryCount-- > 0) {
+                try {
+                    return element.GetAttribute(attribute);
+                    } catch (StaleElementReferenceException) {
+                      Thread.Sleep(1000); // Wait for 1 second before retrying
+                    }
+                }
+            throw new StaleElementReferenceException($"Element is stale after {retryCount} retries");
             }
 
         private bool BlockedInfoOnPage() 
