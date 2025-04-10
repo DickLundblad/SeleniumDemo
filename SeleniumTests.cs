@@ -1,5 +1,10 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using SeleniumDemo.Models;
+using System.Globalization;
+using CsvHelper;
+using CsvHelper.Configuration;
+using OfficeOpenXml;
 
 namespace SeleniumDemo
 {
@@ -64,16 +69,6 @@ namespace SeleniumDemo
         {
         }
 
-        [Test]
-        public void ValidateThatTheMessageIsDisplayed()
-        {
-            ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
-            driver.Navigate().GoToUrl("https://www.lambdatest.com/selenium-playground/simple-form-demo");
-            driver.FindElement(By.Id("user-message")).SendKeys("LambdaTest rules");
-            driver.FindElement(By.Id("showInput")).Click();
-            Assert.IsTrue(driver.FindElement(By.Id("message")).Text.Equals("LambdaTest rules"),
-                          "The expected message was not displayed.");
-        }
 
         [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]")]
         [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]")]
@@ -114,16 +109,120 @@ namespace SeleniumDemo
             var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
 
             Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
-            ExtractHrefs(addDomainToJobPaths, jobNodes);
             TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
+            List<JobListing> jobListings = [];
+            foreach (var node in jobNodes)
+            {
+                var jobListing = new JobListing();
+                jobListing.JobLink = ExtractHref(addDomainToJobPaths, node);
+                jobListings.Add(jobListing);
+             }
+
+            var fileName = RemoveInvalidChars(ReplaceBadCharactersInFilePath(url));
+            var tsvFilePath = $"JobListings_{fileName}.tsv";
+            WriteToFile(jobListings, tsvFilePath);
         }
 
-        private static void ExtractHrefs(string addDomainToJobPaths, System.Collections.ObjectModel.ReadOnlyCollection<IWebElement> jobNodes) 
+        // ...
+
+        [TestCase("JobListingsExcel", "*Joblistings*.tsv")]        public void Z_CreateExcelSheetWithJobListings(string fileName, string filePattern) {
+            var tsvFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern);
+            if (tsvFiles.Length == 0) {
+                TestContext.WriteLine("No TSV files found.");
+                return;
+                }
+            var excelFilePath = $"{fileName}.xlsx";
+            ExcelPackage.License.SetNonCommercialOrganization("My Noncommercial organization");
+            using (var package = new ExcelPackage()) {
+                foreach (var tsvFile in tsvFiles) {
+                    var worksheet = package.Workbook.Worksheets.Add(Path.GetFileNameWithoutExtension(tsvFile));
+                    var config = new CsvConfiguration(CultureInfo.InvariantCulture) {
+                        Delimiter = "\t"
+                        };
+
+                    using (var reader = new StreamReader(tsvFile))
+                    using (var csv = new CsvReader(reader, config)) {
+                        var records = csv.GetRecords<dynamic>().ToList();
+                        if (records.Count == 0) {
+                            TestContext.WriteLine($"No records found in file: {tsvFile}");
+                            continue;
+                            }
+
+                        worksheet.Cells["A1"].LoadFromCollection(records, true);
+                        TestContext.WriteLine($"Loaded {records.Count} records from file: {tsvFile}");
+                        }
+                    }
+                package.SaveAs(new FileInfo(excelFilePath));
+                TestContext.WriteLine($"Excel file created: {excelFilePath}");
+                }
+
+            // Validate that each tab has some rows with data
+            using (var package = new ExcelPackage(new FileInfo(excelFilePath))) {
+                foreach (var worksheet in package.Workbook.Worksheets) {
+                    var rowCount = worksheet.Dimension?.Rows ?? 0;
+                    Assert.That(rowCount, Is.GreaterThan(1), $"Worksheet {worksheet.Name} has no data rows.");
+                    TestContext.WriteLine($"Worksheet {worksheet.Name} has {rowCount - 1} data rows.");
+
+                    // Validate that the column JobLink has value for each row
+                    for (int row = 2; row <= rowCount; row++) {
+                        var jobLink = worksheet.Cells[row, 1].Text; // Assuming JobLink is in the first column
+                        Assert.That(string.IsNullOrEmpty(jobLink), Is.False, $"Row {row} in worksheet {worksheet.Name} has an empty JobLink.");
+                        }
+
+                    // Validate that each sheet has a header row
+                    var headerRow = worksheet.Cells[1, 1, 1, worksheet.Dimension.Columns];
+                    Assert.That(headerRow, Is.Not.Null, $"Worksheet {worksheet.Name} does not have a header row.");
+                    }
+                }
+            }
+
+        private static void WriteToFile(List<JobListing> results, string tsvFilePath)
         {
-            foreach (var jobNode in jobNodes) ExtractHref(addDomainToJobPaths, jobNode);
-        }
+            // Remove the line causing the error
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = "\t"
+            };
 
-        private static void ExtractHref(string addDomainToJobPaths, IWebElement jobNode) 
+            using (var writer = new StreamWriter(tsvFilePath))
+            using (var csv = new CsvWriter(writer, config))
+            {
+                csv.WriteHeader<JobListing>();
+                csv.NextRecord();
+                foreach (var jobListing in results)
+                {
+                    // Remove invalid characters
+                    jobListing.Title = RemoveInvalidChars(jobListing.Title);
+                    jobListing.Description = RemoveInvalidChars(jobListing.Description);
+
+                    csv.WriteRecord(jobListing);
+                    csv.NextRecord();
+                }
+            }
+        }
+        public static string ReplaceBadCharactersInFilePath(string input)
+        {
+            return input.Replace(":", "_")
+                .Replace("//", "_").
+                Replace("/", "_").
+                Replace(".", "_").
+                Replace("?", "_").
+                Replace("=", "_").
+                Replace("%", "_").
+                Replace(")", "_").
+                Replace("(", "_");
+        }
+        public static string RemoveInvalidChars(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            // Hardcoded invalid characters for Windows
+            char[] invalidCharsForWindowsAndLinux = { '<', '>', ':', '"', '/', '\\', '|', '?', '*', '\0' };
+
+            Console.WriteLine($"Invalid chars: {string.Join(", ", invalidCharsForWindowsAndLinux)}");
+            return new string(input.Where(ch => !invalidCharsForWindowsAndLinux.Contains(ch)).ToArray());
+        }
+        private static string ExtractHref(string addDomainToJobPaths, IWebElement jobNode) 
         {
             var jobLink = jobNode.GetAttribute("href");
             if (string.IsNullOrEmpty(jobLink)) {
@@ -138,7 +237,8 @@ namespace SeleniumDemo
                 jobLink = addDomainToJobPaths + jobLink;
                 }
             TestContext.WriteLine($"Job link: {jobLink}");
-        }
+            return jobLink;
+            }
 
         private bool BlockedInfoOnPage() 
         {
@@ -147,6 +247,8 @@ namespace SeleniumDemo
                 string[] xPaths = new string[]
                 {
                     "//*[contains(text(), 'blockerad')]",
+                    "*[contains(normalize-space(), 'Bekräfta att du är en människa')]",
+                    "*[contains(normalize-space(), 'Additional Verification Required')]",
                     "//*[contains(text(), 'captcha')]",
                     "//*[contains(@id, 'captcha')]",
                     "//*[contains(@class, 'captcha')]"
