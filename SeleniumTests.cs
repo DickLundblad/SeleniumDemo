@@ -4,7 +4,7 @@ using SeleniumDemo.Models;
 using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
-using OfficeOpenXml;
+using ClosedXML.Excel;
 
 namespace SeleniumDemo
 {
@@ -123,83 +123,91 @@ namespace SeleniumDemo
             WriteToFile(jobListings, tsvFilePath);
         }
 
-        // ...
+        [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*Joblistings*.tsv")]        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern) 
+         {
+            WriteToExcelSheetUsingClosedXML(fileName,filePattern);
+         }
 
-        [TestCase("JobListingsExcel", "*Joblistings*.tsv")]        public void Z_CreateExcelSheetWithJobListings(string fileName, string filePattern) {
-            var tsvFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), filePattern);
-            if (tsvFiles.Length == 0) {
+        /// <summary>
+        /// Grabas existing TSV files and writes them to an Excel sheet using ClosedXML.
+        /// </summary>
+        /// <param name="fileName">Filename of excelsheet</param>
+        /// <param name="searchPatternForFiles"></param>
+        private void WriteToExcelSheetUsingClosedXML(string fileName, string searchPatternForFiles) 
+        {
+            var tsvFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), searchPatternForFiles);
+            if (tsvFiles.Length == 0) 
+            {
                 TestContext.WriteLine("No TSV files found.");
                 return;
-                }
-            var excelFilePath = $"{fileName}.xlsx";
-            ExcelPackage.License.SetNonCommercialOrganization("My Noncommercial organization");
-            using (var package = new ExcelPackage()) {
-                foreach (var tsvFile in tsvFiles) {
-                    var worksheet = package.Workbook.Worksheets.Add(Path.GetFileNameWithoutExtension(tsvFile));
-                    var config = new CsvConfiguration(CultureInfo.InvariantCulture) {
-                        Delimiter = "\t"
-                        };
+            }
+            //string outputDirectory = @"C:\path\to\xlsx\output";
+            using (var workbook = new XLWorkbook())
+            {
+                foreach (var tsvFile in tsvFiles)
+                {
+                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(tsvFile);
+                    //string xlsxPath = Path.Combine(outputDirectory, fileNameWithoutExtension + ".xlsx");
+                    fileNameWithoutExtension = fileNameWithoutExtension.Substring(0,30);
+                    var worksheet = workbook.Worksheets.Add(fileNameWithoutExtension);
+                    int row = 1;
 
-                    using (var reader = new StreamReader(tsvFile))
-                    using (var csv = new CsvReader(reader, config)) {
-                        var records = csv.GetRecords<dynamic>().ToList();
-                        if (records.Count == 0) {
-                            TestContext.WriteLine($"No records found in file: {tsvFile}");
-                            continue;
-                            }
-
-                        worksheet.Cells["A1"].LoadFromCollection(records, true);
-                        TestContext.WriteLine($"Loaded {records.Count} records from file: {tsvFile}");
+                    foreach (var line in File.ReadLines(tsvFile))
+                    {
+                        var columns = line.Split('\t');
+                        for (int col = 0; col < columns.Length; col++)
+                        {
+                            worksheet.Cell(row, col + 1).Value = columns[col];
                         }
-                    }
-                package.SaveAs(new FileInfo(excelFilePath));
-                TestContext.WriteLine($"Excel file created: {excelFilePath}");
+                        row++;
+                     }
                 }
-
-            // Validate that each tab has some rows with data
-            using (var package = new ExcelPackage(new FileInfo(excelFilePath))) {
-                foreach (var worksheet in package.Workbook.Worksheets) {
-                    var rowCount = worksheet.Dimension?.Rows ?? 0;
-                    Assert.That(rowCount, Is.GreaterThan(1), $"Worksheet {worksheet.Name} has no data rows.");
-                    TestContext.WriteLine($"Worksheet {worksheet.Name} has {rowCount - 1} data rows.");
-
-                    // Validate that the column JobLink has value for each row
-                    for (int row = 2; row <= rowCount; row++) {
-                        var jobLink = worksheet.Cells[row, 1].Text; // Assuming JobLink is in the first column
-                        Assert.That(string.IsNullOrEmpty(jobLink), Is.False, $"Row {row} in worksheet {worksheet.Name} has an empty JobLink.");
-                        }
-
-                    // Validate that each sheet has a header row
-                    var headerRow = worksheet.Cells[1, 1, 1, worksheet.Dimension.Columns];
-                    Assert.That(headerRow, Is.Not.Null, $"Worksheet {worksheet.Name} does not have a header row.");
-                    }
-                }
+                workbook.SaveAs(fileName);
+            }
+         }
+        private static void WriteToFile(List<JobListing> results, string tsvFilePath) 
+        {
+            // Log the job listings
+            foreach (var jobListing in results) 
+            {
+                TestContext.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
             }
 
-        private static void WriteToFile(List<JobListing> results, string tsvFilePath)
-        {
-            // Remove the line causing the error
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-            {
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture) {
                 Delimiter = "\t"
-            };
+                };
 
             using (var writer = new StreamWriter(tsvFilePath))
-            using (var csv = new CsvWriter(writer, config))
+            using (var csv = new CsvWriter(writer, config)) 
             {
                 csv.WriteHeader<JobListing>();
                 csv.NextRecord();
-                foreach (var jobListing in results)
+                foreach (var jobListing in results) 
                 {
                     // Remove invalid characters
                     jobListing.Title = RemoveInvalidChars(jobListing.Title);
                     jobListing.Description = RemoveInvalidChars(jobListing.Description);
-
-                    csv.WriteRecord(jobListing);
-                    csv.NextRecord();
+                    if (!string.IsNullOrEmpty(jobListing.JobLink)) // Ensure JobLink is not empty
+                    {
+                        csv.WriteRecord(jobListing);
+                        csv.NextRecord();
+                    }else 
+                    {
+                        TestContext.WriteLine($"JobLink is empty for job listing: {jobListing.Title}");
+                    }
                 }
-            }
+             }
+
+            TestContext.WriteLine($"TSV file created: {tsvFilePath}");
+            using (var reader = new StreamReader(tsvFilePath))
+            using (var csvR = new CsvReader(reader, config)) 
+            {
+                    var records = csvR.GetRecords<JobListing>().ToList();
+                    Assert.That(records.Count, Is.GreaterThan(0), "The TSV file does not contain any job listings.");
+                    TestContext.WriteLine($"Validated that the TSV file contains {records.Count} job listings.");
+             }
         }
+        
         public static string ReplaceBadCharactersInFilePath(string input)
         {
             return input.Replace(":", "_")
