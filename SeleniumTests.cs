@@ -1,5 +1,6 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Remote;
 using System;
 
@@ -78,17 +79,18 @@ namespace SeleniumDemo
         }
 
         [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "https://jobbsafari.se")]
-        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "[starts-with(@data-testid, 'slider_item')]")]
-        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]")]
-        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "/*[@data-testid='jobTitle']")]
-        [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting/?currentJobId=4171048864&discover=true", "/*[@data-job-id")]
-        public void ValidateThatPageIsLoaded(string url, string selectorXPathForJobEntry, string addDomainToJobPaths = "")
+        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]","")]
+        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]","")]
+        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "/*[@data-testid='jobTitle']","", 2000)]
+        [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "")]
+        public void ValidateThatPageIsLoaded(string url, string selectorXPathForJobEntry, string addDomainToJobPaths = "", int delayUserInteraction=0)
         {
             ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
             driver.SwitchTo().Window(driver.WindowHandles.Last());
             driver.Navigate().GoToUrl(url);
 
             AcceptCookiesIfPresent();
+            Thread.Sleep(delayUserInteraction);
             try
             {
                 var accepteraButton = driver.FindElement(By.XPath("//button[contains(text(), 'Acceptera')]"));
@@ -102,13 +104,36 @@ namespace SeleniumDemo
             }
 
             var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
-
+            if (Blocked())
+            {
+                Assert.Fail("Blocked on page");
+            }    
             Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
             Console.WriteLine($"Number of job entries found: {jobNodes.Count}");
         }
-
-        [Test]
-        public void AcceptCookiesIfPresent()
+        private bool Blocked() {
+            try {
+                var blockedElement = driver.FindElement(By.XPath("//div[@class='blocked']"));
+                return blockedElement.Displayed;
+                } catch (NoSuchElementException) {
+                // Element not found, not blocked
+                if (driver.FindElements(By.XPath("//*[contains(text(), 'Blockerad')]")).Count > 0) {
+                    return true;
+                    }
+                if (driver.FindElements(By.XPath("//div[@class='blocked']")).Count > 0) {
+                    return true;
+                    }
+                } catch (ElementClickInterceptedException) {
+                return false;
+                } catch (StaleElementReferenceException) {
+                // Element is no longer attached to the DOM
+                return false;
+                } catch (ElementNotInteractableException) {
+                }
+            return true;
+            }
+                    // Element is not interactable
+        private void AcceptCookiesIfPresent()
         {
             try
             {
