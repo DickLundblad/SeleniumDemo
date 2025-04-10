@@ -75,12 +75,12 @@ namespace SeleniumDemo
                           "The expected message was not displayed.");
         }
 
-        [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "https://jobbsafari.se")]
-        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]","")]
-        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]","")]
-        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']","", 2000)]
-        [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "")]
-        public void ValidateThatPageIsLoaded(string url, string selectorXPathForJobEntry, string addDomainToJobPaths = "", int delayUserInteraction=0)
+        [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]")]
+        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]")]
+        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]")]
+        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']",  2000)]
+        [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]")]
+        public void ValidateThatStartPageIsLoaded(string url, string selectorXPathForJobEntry, int delayUserInteraction=0)
         {
             ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
             driver.SwitchTo().Window(driver.WindowHandles.Last());
@@ -88,17 +88,59 @@ namespace SeleniumDemo
 
             AcceptPopups();
             Thread.Sleep(delayUserInteraction);
-            if (Blocked() || BlockedInfOnPage())
-            {
-                Assert.Fail("Blocked on page");
-            }  
+            Assert.That(BlockedInfoOnPage(),Is.False,"Blocked on page");
 
             var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
   
             Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
             TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
         }
-        private bool BlockedInfOnPage() 
+
+        [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "https://jobbsafari.se")]
+        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]","")]
+        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]","")]
+        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']","", 2000)]
+        [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "")]
+        public void ValidateThatJoblinksCanBeRetrievedFromPages(string url, string selectorXPathForJobEntry, string addDomainToJobPaths = "", int delayUserInteraction=0) 
+        {
+            ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
+            driver.SwitchTo().Window(driver.WindowHandles.Last());
+            driver.Navigate().GoToUrl(url);
+
+            AcceptPopups();
+            Thread.Sleep(delayUserInteraction);
+            Assert.That(BlockedInfoOnPage(), Is.False, "Blocked on page");
+
+            var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
+
+            Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
+            ExtractHrefs(addDomainToJobPaths, jobNodes);
+            TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
+        }
+
+        private static void ExtractHrefs(string addDomainToJobPaths, System.Collections.ObjectModel.ReadOnlyCollection<IWebElement> jobNodes) 
+        {
+            foreach (var jobNode in jobNodes) ExtractHref(addDomainToJobPaths, jobNode);
+        }
+
+        private static void ExtractHref(string addDomainToJobPaths, IWebElement jobNode) 
+        {
+            var jobLink = jobNode.GetAttribute("href");
+            if (string.IsNullOrEmpty(jobLink)) {
+                var anchorTag = jobNode.FindElement(By.TagName("a"));
+                jobLink = anchorTag?.GetAttribute("href");
+                }
+            if (string.IsNullOrEmpty(jobLink)) {
+                var innerHtml = jobNode.GetAttribute("innerHTML");
+                TestContext.WriteLine($"innerHTML: {innerHtml}");
+                }
+            if (!string.IsNullOrEmpty(addDomainToJobPaths)) {
+                jobLink = addDomainToJobPaths + jobLink;
+                }
+            TestContext.WriteLine($"Job link: {jobLink}");
+        }
+
+        private bool BlockedInfoOnPage() 
         {
             if (driver.FindElements(By.XPath("//*[contains(text(), 'blockerad')]")).Count > 0) 
             {
@@ -122,25 +164,6 @@ namespace SeleniumDemo
             }
             return false;
         }
-
-        private bool Blocked() {
-            try {
-                var blockedElement = driver.FindElement(By.XPath("//div[@class='blocked']"));
-                return blockedElement.Displayed;
-                } catch (NoSuchElementException) {
-                // Element not found, not blocked
-                if (driver.FindElements(By.XPath("//div[@class='blocked']")).Count > 0) {
-                    return true;
-                 }
-                } catch (ElementClickInterceptedException) {
-                return false;
-                } catch (StaleElementReferenceException) {
-                // Element is no longer attached to the DOM
-                return false;
-                } catch (ElementNotInteractableException) {
-                }
-            return false;
-            }
 
         private void AcceptPopups()
         {
