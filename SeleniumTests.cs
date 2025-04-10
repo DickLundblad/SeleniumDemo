@@ -104,22 +104,28 @@ namespace SeleniumDemo
             }
 
             var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
-            if (Blocked())
+            if (Blocked() || BlockedInfoTextOnPage())
             {
                 Assert.Fail("Blocked on page");
             }    
             Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
             Console.WriteLine($"Number of job entries found: {jobNodes.Count}");
         }
+        private bool BlockedInfoTextOnPage()
+        {
+            if (driver.FindElements(By.XPath("//*[contains(text(), 'Blockerad')]")).Count > 0) 
+            {
+                return true;
+            }
+            return false;
+         }
+
         private bool Blocked() {
             try {
                 var blockedElement = driver.FindElement(By.XPath("//div[@class='blocked']"));
                 return blockedElement.Displayed;
                 } catch (NoSuchElementException) {
                 // Element not found, not blocked
-                if (driver.FindElements(By.XPath("//*[contains(text(), 'Blockerad')]")).Count > 0) {
-                    return true;
-                    }
                 if (driver.FindElements(By.XPath("//div[@class='blocked']")).Count > 0) {
                     return true;
                     }
@@ -130,7 +136,7 @@ namespace SeleniumDemo
                 return false;
                 } catch (ElementNotInteractableException) {
                 }
-            return true;
+            return false;
             }
                     // Element is not interactable
         private void AcceptCookiesIfPresent()
