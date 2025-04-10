@@ -1,8 +1,5 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Internal;
-using OpenQA.Selenium.Remote;
-using System;
 
 namespace SeleniumDemo
 {
@@ -81,7 +78,7 @@ namespace SeleniumDemo
         [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "https://jobbsafari.se")]
         [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]","")]
         [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]","")]
-        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "/*[@data-testid='jobTitle']","", 2000)]
+        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']","", 2000)]
         [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "")]
         public void ValidateThatPageIsLoaded(string url, string selectorXPathForJobEntry, string addDomainToJobPaths = "", int delayUserInteraction=0)
         {
@@ -89,36 +86,33 @@ namespace SeleniumDemo
             driver.SwitchTo().Window(driver.WindowHandles.Last());
             driver.Navigate().GoToUrl(url);
 
-            AcceptCookiesIfPresent();
+            AcceptPopups();
             Thread.Sleep(delayUserInteraction);
-            try
-            {
-                var accepteraButton = driver.FindElement(By.XPath("//button[contains(text(), 'Acceptera')]"));
-                if (accepteraButton.Displayed)
-                {
-                    accepteraButton.Click();
-                }
-            }
-            catch (NoSuchElementException)
-            {
-            }
-
-            var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
-            if (Blocked() || BlockedInfoTextOnPage())
+            if (Blocked() || BlockedInfonPage())
             {
                 Assert.Fail("Blocked on page");
-            }    
+            }  
+
+            var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
+  
             Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
             Console.WriteLine($"Number of job entries found: {jobNodes.Count}");
         }
-        private bool BlockedInfoTextOnPage()
-        {
-            if (driver.FindElements(By.XPath("//*[contains(text(), 'Blockerad')]")).Count > 0) 
-            {
+        private bool BlockedInfonPage() {
+            if (driver.FindElements(By.XPath("//*[contains(text(), 'blockerad')]")).Count > 0) {
                 return true;
-            }
+                }
+            if (driver.FindElements(By.XPath("//*[contains(text(), 'captcha')]")).Count > 0) {
+                return true;
+                }
+            if (driver.FindElements(By.XPath("//*[contains(@id, 'captcha')]")).Count > 0) {
+                return true;
+                }
+            if (driver.FindElements(By.XPath("//*[contains(@class, 'captcha')]")).Count > 0) {
+                return true;
+                }
             return false;
-         }
+            }
 
         private bool Blocked() {
             try {
@@ -128,7 +122,7 @@ namespace SeleniumDemo
                 // Element not found, not blocked
                 if (driver.FindElements(By.XPath("//div[@class='blocked']")).Count > 0) {
                     return true;
-                    }
+                 }
                 } catch (ElementClickInterceptedException) {
                 return false;
                 } catch (StaleElementReferenceException) {
@@ -138,13 +132,15 @@ namespace SeleniumDemo
                 }
             return false;
             }
-                    // Element is not interactable
-        private void AcceptCookiesIfPresent()
+
+        private void AcceptPopups()
         {
             try
             {
                 var acceptCookiesButton = driver.FindElement(By.XPath("//button[contains(text(), 'Accept Cookies')]"));
                 var accepteraButton = driver.FindElement(By.XPath("//button[contains(text(), 'Acceptera')]"));
+                var approveButton = driver.FindElement(By.XPath("//button[contains(text(), 'Godkänn')]"));
+
                 if (acceptCookiesButton.Displayed)
                 {
                     acceptCookiesButton.Click();
@@ -152,6 +148,10 @@ namespace SeleniumDemo
                 if (accepteraButton.Displayed)
                 {
                     acceptCookiesButton.Click();
+                }
+                if (approveButton.Displayed)
+                {
+                    approveButton.Click();
                 }
             }
             catch (NoSuchElementException)
