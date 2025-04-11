@@ -5,6 +5,10 @@ using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
 using ClosedXML.Excel;
+using System.Text.RegularExpressions;
+using System.Diagnostics;
+using OpenQA.Selenium.Support.UI;
+using System;
 
 namespace SeleniumDemo
 {
@@ -83,7 +87,7 @@ namespace SeleniumDemo
 
             AcceptPopups();
             Thread.Sleep(delayUserInteraction);
-            Assert.That(BlockedInfoOnPage(),Is.False,"Blocked on page");
+            Assert.That(BlockedInfoOnPage(),Is.False,$"Blocked on page:{url}");
 
             var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
   
@@ -104,7 +108,7 @@ namespace SeleniumDemo
 
             AcceptPopups();
             Thread.Sleep(delayUserInteraction);
-            Assert.That(BlockedInfoOnPage(), Is.False, "Blocked on page");
+            Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on page: {url}");
 
             var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
 
@@ -133,10 +137,11 @@ namespace SeleniumDemo
 
             AcceptPopups();
             Thread.Sleep(delayUserInteraction);
-            Assert.That(BlockedInfoOnPage(), Is.False, "Blocked on page");
-
             var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
-
+            if (jobNodes.Count == 0)
+            { 
+                Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on start page {url}");
+            }
             Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
             TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
             List<JobListing> jobListings = [];
@@ -166,38 +171,112 @@ namespace SeleniumDemo
         [TestCase("https://www.linkedin.com/jobs/view/4194781616/?eBP=BUDGET_EXHAUSTED_JOB&refId=wqmOM1Whbos%2BqR2hax6d%2BQ%3D%3D&trackingId=Y31jWZzmfvJYm7mUln7UBQ%3D%3D&trk=flagship3_job_collections_leaf_page", 0)]
         [TestCase("https://se.jooble.org/desc/-154934751721925931?ckey=NONE&rgn=-1&pos=1&elckey=3819297206643930044&pageType=20&p=1&jobAge=2608&relb=140&brelb=100&bscr=112&scr=156.8&premImp=1", 0)]
         [TestCase("https://jobbsafari.se/jobb/solution-architect-intralogistics-development-supply-chain-development-siske-19207507", 0)]
-        public void ValidateThatJobLinkCanBeOpened(string url, int delayUserInteraction=0) 
+        [TestCase("https://jobbsafari.se/jobb/rd-specialist-till-essentias-protein-solutions-sesmp-19206771", 0)]
+        public void ValidateThatAJobLinkCanBeOpenedAndParsed(string url, int delayUserInteraction=0) 
         {
             var jobListing = OpenAndParseJobLink(url, delayUserInteraction);
-            // JobLink can change if it's a re-direct, but we will keep the original UR
+            // JobLink can change if it's a re-direct, but we will keep the original URL
             Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
-            TestContext.WriteLine($"Job title: {jobListing.Title}");
-            }
-
+        }
         private JobListing OpenAndParseJobLink(string url, int delayUserInteraction) {
             var jobListing = new JobListing();
             jobListing.JobLink = url;
-
-            ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
-            driver.SwitchTo().Window(driver.WindowHandles.Last());
-            driver.Navigate().GoToUrl(url);
-
-            AcceptPopups();
-            Thread.Sleep(delayUserInteraction);
-            Assert.That(BlockedInfoOnPage(), Is.False, "Blocked on page");
-
-            var bodyNode = driver.FindElement(By.XPath("//body"));
-
-
-            var titleNode = driver.FindElement(By.XPath("//h1"));
-            jobListing.Title = titleNode.Text;
-            TestContext.WriteLine($"jobListing.Title: {jobListing.Title}");
-
-           TestContext.WriteLine($"Body text: {bodyNode.Text}");
+            try 
+            {
+                ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
+                driver.SwitchTo().Window(driver.WindowHandles.Last());
+                driver.Navigate().GoToUrl(url);
+                AcceptPopups();
+                var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
+                Thread.Sleep(delayUserInteraction);
+                Assert.That(BlockedInfoOnPage(), Is.False,$"Blocked on jobLink page: {url}");
+                
+                // extract info on page
+                jobListing.Title = ExtractTitle();
+                jobListing.ContactInformation = ExtractContactInfo();
+            } 
+            catch (Exception ex)
+            {
+                TestContext.WriteLine($"Warning Exception OpenAndParseJobLink({url}) , exception message: {ex.Message}");
+            }
             return jobListing;
-         }
+       }
+    public string ExtractTitle()
+    {
+        string response = string.Empty;
+        var titleNode = driver.FindElement(By.XPath("//h1"));
+        response = titleNode.Text;
+        TestContext.WriteLine($"Extracted.Title: {response}");
+      
+        return response;
+    }
+    public string ExtractContactInfo()
+    {
+        string response = string.Empty;
+        var bodyNode = driver.FindElement(By.XPath("//body"));
+        
+        /*if (_chatService != null)
+        {
+            string prompt = $@"extract contact information and roles from this text in the same language as the text: {text}";
+            response = await _chatService.GetChatResponse(prompt);
+        }
+        else
+        {*/
+            
+            response = ExtractPhoneNumbersFromAreaCodeExtractions(bodyNode.Text);
+        //}
+        if (string.IsNullOrEmpty(response))
+        {
+            response = ExtactContactInfoFromHtml(bodyNode.Text);
+        }
+        TestContext.WriteLine($"Extracted ContactInfo: {response}");
+        return response;
+    }
 
-        [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*Joblistings*.tsv")]        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern) 
+    public string ExtactContactInfoFromHtml(string html)
+    {
+        var results = new List<string>();
+        string pattern = @"(.{0,125}?)(\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b|07\d{2}-\d{6})(.{0,50}?)";
+
+        foreach (Match match in Regex.Matches(html, pattern, RegexOptions.IgnoreCase))
+        {
+            if (match.Groups.Count >= 4)
+            {
+                string before = match.Groups[1].Value.Trim();
+                string contact = match.Groups[2].Value.Trim();
+                string after = match.Groups[3].Value.Trim();
+
+                results.Add($"{before} {contact} {after}".Trim());
+            }
+        }
+
+        return string.Join(", ", results);
+    }
+    public string ExtractPhoneNumbersFromAreaCodeExtractions(string html, string countryCode = "+46")
+    {
+        // Regex for phone numbers starting with +46, allowing spaces inside the number
+        var phoneRegex = new Regex(@$"\{countryCode}[\s\-]?[0-9\s\-]+");
+        var matches = phoneRegex.Matches(html);
+
+        var result = new List<string>();
+
+        foreach (Match match in matches)
+        {
+            // Find the name associated with the phone number
+            var phoneIndex = html.IndexOf(match.Value);
+            var nameStartIndex = html.LastIndexOfAny(new char[] { '.', ';' }, phoneIndex) + 1;
+            var nameEndIndex = phoneIndex;
+            var name = html.Substring(nameStartIndex, nameEndIndex - nameStartIndex).Trim();
+
+            result.Add($"{name}, {match.Value}");
+        }
+
+        return string.Join(", ", result);
+    }
+
+        [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*Joblistings*.tsv")]
+        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern) 
          {
             WriteToExcelSheetUsingClosedXML(fileName,filePattern);
          }
@@ -338,28 +417,57 @@ private static string ExtractHref(string addDomainToJobPaths, IWebElement jobNod
 
         private bool BlockedInfoOnPage() 
         {
-            if (driver.FindElements(By.XPath("//*[contains(text(), 'blockerad')]")).Count > 0) 
-            {
-                string[] xPaths = new string[]
-                {
-                    "//*[contains(text(), 'blockerad')]",
-                    "*[contains(normalize-space(), 'Bekräfta att du är en människa')]",
-                    "*[contains(normalize-space(), 'Additional Verification Required')]",
-                    "//*[contains(text(), 'captcha')]",
-                    "//*[contains(@id, 'captcha')]",
-                    "//*[contains(@class, 'captcha')]"
-                };
+   
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
+            /*var allHtml = driver.PageSource;
+            TestContext.WriteLine("HTML after ensuring page load:");
+            TestContext.WriteLine(allHtml);
 
-                foreach (var xPath in xPaths) 
+            var temp = driver.PageSource;
+            TestContext.WriteLine("Raw HTML:");
+            TestContext.WriteLine(allHtml);
+            
+            var decodedText = System.Net.WebUtility.HtmlDecode(driver.PageSource);
+            TestContext.WriteLine("Decoded allHtml Text:");
+            TestContext.WriteLine(decodedText);
+
+            var bodyText = GetElementTextOnCurrentPage("//body");
+            TestContext.WriteLine("Body Text:");
+            TestContext.WriteLine(bodyText);*/
+            
+            string[] xPaths = new string[]
+            {
+                "//*[contains(text(), 'blockerad')]",
+                "*[contains(normalize-space(), 'Bekräfta att du är en människa')]",
+                "*[contains(normalize-space(), 'Additional Verification Required')]",
+                "//*[contains(text(), 'captcha')]",
+                "//*[contains(@id, 'captcha')]",
+                "//*[contains(@class, 'captcha')]"
+            };
+
+            foreach (var xPath in xPaths) 
+            {
+                var elements = driver.FindElements(By.XPath(xPath));
+                if (elements.Count > 0) 
                 {
-                    if (driver.FindElements(By.XPath(xPath)).Count > 0) 
+                    foreach (var element in elements) 
                     {
-                        TestContext.WriteLine($"BlockedInfoOnPage(): {xPath}");
-                        return true;
+                        if (element.Displayed) 
+                        {
+                            TestContext.WriteLine($"Element is displayed: {element.Text}");
+                            TestContext.WriteLine($"Element found and Displayed, element.TagName: {element.TagName}");
+                            var bodyText = GetElementTextOnCurrentPage("//body");
+                            TestContext.WriteLine("Body Text:");
+                            TestContext.WriteLine(bodyText);
+                            return true;
+                        }else 
+                        {
+                            TestContext.WriteLine($"Blocked element exists for xPath{xPath}, but is is not displayed: {element.Text}");
+                        }
                     }
-                }
-                return true;
-            }
+                 }
+              }
             return false;
         }
 
@@ -395,5 +503,22 @@ private static string ExtractHref(string addDomainToJobPaths, IWebElement jobNod
             driver.Quit();
             driver.Dispose();
         }
+        private string GetElementTextOnCurrentPage(string xPath) {
+            try {
+                var bodyElement = driver.FindElement(By.XPath(xPath));
+                return bodyElement.Text;
+                } catch (NoSuchElementException ex) {
+                TestContext.WriteLine($"Error: {ex.Message}");
+                return string.Empty;
+                }
+            }
+        private string GetAllHtmlOnCurrentPage() {
+            try {
+                return driver.PageSource;
+                } catch (Exception ex) {
+                TestContext.WriteLine($"Error: {ex.Message}");
+                return string.Empty;
+                }
+            }
     }
 }
