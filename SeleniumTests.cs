@@ -6,22 +6,20 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using ClosedXML.Excel;
 using System.Text.RegularExpressions;
-using System.Diagnostics;
 using OpenQA.Selenium.Support.UI;
-using System;
 
 namespace SeleniumDemo
 {
     public class SeleniumTests
     {
         private ChromeDriver driver; // Changed type from IWebDriver to ChromeDriver for improved performance
+        private ChatGPTService _chatService;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
             try
             {
-
                 // Check if any Chrome instances are already running
                 var chromeProcesses = System.Diagnostics.Process.GetProcessesByName("chrome");
                 if (chromeProcesses.Length == 0)
@@ -29,8 +27,7 @@ namespace SeleniumDemo
                     TestContext.WriteLine("No Chrome instances found, start a new one.");
                     System.Diagnostics.Process.Start(@"C:\Program Files\Google\Chrome\Application\chrome.exe",
                         @"--remote-debugging-port=9222 --user-data-dir=C:\ChromeDebug");
-
-                    // Optional: wait a bit for Chrome to fully initialize
+                   // Optional: wait a bit for Chrome to fully initialize
                     Thread.Sleep(2000);
                 }
                 else
@@ -51,7 +48,13 @@ namespace SeleniumDemo
 
                     // Example: open a new tab and navigate
                     driver.Navigate().GoToUrl("https://example.com");
-                }
+
+                    var chatGPTAPIKey = "";
+                    if(! string.IsNullOrEmpty(chatGPTAPIKey))
+                    { 
+                        _chatService = new ChatGPTService(chatGPTAPIKey);
+                    }
+                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine("Error: " + ex.Message);
@@ -62,9 +65,6 @@ namespace SeleniumDemo
                 TestContext.WriteLine($"Failed to connect to the existing Chrome instance: {ex.Message}");
                 TestContext.WriteLine("Falling back to launching a new ChromeDriver instance...");
                 Assert.Fail($"Failed to connect to the existing Chrome instance.s.{ex.Message}");
-
-                // Fallback to opening a new ChromeDriver instance if RemoteWebDriver fails
-                driver = new ChromeDriver();
             }
         }
 
@@ -178,11 +178,11 @@ namespace SeleniumDemo
             // JobLink can change if it's a re-direct, but we will keep the original URL
             Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
         }
-        private JobListing OpenAndParseJobLink(string url, int delayUserInteraction) {
+        private JobListing OpenAndParseJobLink(string url, int delayUserInteraction) 
+        {
             var jobListing = new JobListing();
             jobListing.JobLink = url;
-            try 
-            {
+            try {
                 ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
                 driver.SwitchTo().Window(driver.WindowHandles.Last());
                 driver.Navigate().GoToUrl(url);
@@ -190,20 +190,30 @@ namespace SeleniumDemo
                 var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
                 wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
                 Thread.Sleep(delayUserInteraction);
-                Assert.That(BlockedInfoOnPage(), Is.False,$"Blocked on jobLink page: {url}");
-                
+                Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on jobLink page: {url}");
+
                 // extract info on page
                 jobListing.Title = ExtractTitle();
                 jobListing.ContactInformation = ExtractContactInfo();
-            } 
-            catch (Exception ex)
+                jobListing.Published = ExtractPublishedDate();
+            } catch (Exception ex)
             {
                 TestContext.WriteLine($"Warning Exception OpenAndParseJobLink({url}) , exception message: {ex.Message}");
             }
             return jobListing;
        }
-    public string ExtractTitle()
-    {
+
+     private  string ExtractPublishedDate() 
+     {
+        string response = string.Empty;
+        
+        TestContext.WriteLine($"Extracted.PublishedDate: {response}");
+      
+        return response;
+     }
+
+     public string ExtractTitle()
+     {
         string response = string.Empty;
         var titleNode = driver.FindElement(By.XPath("//h1"));
         response = titleNode.Text;
@@ -211,21 +221,29 @@ namespace SeleniumDemo
       
         return response;
     }
-    public string ExtractContactInfo()
+    private string ExtractContactInfo()
     {
         string response = string.Empty;
         var bodyNode = driver.FindElement(By.XPath("//body"));
         
-        /*if (_chatService != null)
+        if (_chatService != null)
         {
-            string prompt = $@"extract contact information and roles from this text in the same language as the text: {text}";
-            response = await _chatService.GetChatResponse(prompt);
-        }
-        else
-        {*/
-            
-            response = ExtractPhoneNumbersFromAreaCodeExtractions(bodyNode.Text);
-        //}
+            string prompt = $@"extract contact information and roles from this text in the same language as the text: {bodyNode.Text}";
+            var task =_chatService.GetChatResponse(prompt);
+            if (task != null) 
+            {
+                    response = task.Result;
+            }
+            if (response != string.Empty) 
+            {
+                return response;
+            }else 
+            {
+                TestContext.WriteLine($"ChatGPT returned empty response for prompt: {prompt}");
+            }
+         }    
+        response = ExtractPhoneNumbersFromAreaCodeExtractions(bodyNode.Text);
+
         if (string.IsNullOrEmpty(response))
         {
             response = ExtactContactInfoFromHtml(bodyNode.Text);
