@@ -1,9 +1,4 @@
 ﻿using SeleniumDemo.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SeleniumDemo
 {
@@ -30,7 +25,7 @@ namespace SeleniumDemo
         {
             var randomName = Guid.NewGuid().ToString(); // Generate a random name
             var fileName = $"ReadJobListings_{randomName}.tsv";
-            var jobLink = "https://www.linkedin.com/jobs/collections/it-services-and-it-consulting/?currentJobId=4170820433";
+            var jobLink = "https://www.linkedin.com/link1";
             List<JobListing> jobListings = new List<JobListing>();
             var job1 = new JobListing() { JobLink = jobLink};
             jobListings.Add(job1);
@@ -49,15 +44,19 @@ namespace SeleniumDemo
        { 
             var randomName = Guid.NewGuid().ToString(); // Generate a random name
             var fileName = $"UpdateJobListings_{randomName}.tsv";
-            var jobLink = "https://www.linkedin.com/jobs/collections/it-services-and-it-consulting/?currentJobId=4170820433";
-            var updatedJobLink = "https://www.linkedin.com/jobs/updatedlink";
+            var jobLink = "https://www.linkedin.com/link1";
+            var jobLink2 = "https://www.linkedin.com/link2";
+            var updatedJobLink = "https://www.linkedin.com/updatedlink";
             List<JobListing> jobListings = new List<JobListing>();
             var job1 = new JobListing() { JobLink = jobLink};
+            var job2 = new JobListing() { JobLink = jobLink2};
             jobListings.Add(job1);
+            jobListings.Add(job2);
             SeleniumTestsHelpers.WriteToFile(jobListings, fileName);
 
             List<JobListing> jobListingsFromFile = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName);
             jobListingsFromFile[0].JobLink = updatedJobLink;
+
             SeleniumTestsHelpers.WriteToFile(jobListingsFromFile, fileName);
 
             List<JobListing> updatedJobListingsFromFile = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName);
@@ -68,8 +67,35 @@ namespace SeleniumDemo
             "The re-loaded updated JobListings from file should notmatch. the jobLink is used for comparison ");
         }
 
-        // update objects in file  CRUD(Write, Read, update, Write, read) 
-
         // if jobList exist, don't add, just update the ojbect
+        [Test]
+        public void UpdateExistingJobListings()
+       { 
+            var randomName = Guid.NewGuid().ToString(); // Generate a random name
+            var fileName = $"UpdateExistingJobListings_{randomName}.tsv";
+            var contactInformation1 = "Original Contact Information 1";
+            var contactInformation2 = "Original Contact Information 2";
+            var updatedContactInformation = "updated Contact Information";
+            var jobLink1 = "https://www.linkedin.com/link1";
+            var jobLink2 = "https://www.linkedin.com/link2";
+            List<JobListing> jobListings = new List<JobListing>();
+            var job1 = new JobListing() { JobLink = jobLink1, ContactInformation = contactInformation1};
+            var job2 = new JobListing() { JobLink = jobLink2, ContactInformation = contactInformation2};
+            jobListings.Add(job1);
+            jobListings.Add(job2);
+            SeleniumTestsHelpers.WriteToFile(jobListings, fileName);
+
+            List<JobListing> jobListingsFromFile = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName);
+            // find the jobListing with jobLink1 and update it
+            var itemToUpdate = jobListingsFromFile.FirstOrDefault(x => x.JobLink == jobLink1);
+            itemToUpdate.ContactInformation = updatedContactInformation;
+            SeleniumTestsHelpers.WriteToFile(jobListingsFromFile, fileName);
+
+            List<JobListing> updatedJobListingsFromFile = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName);
+            var updatedItem = updatedJobListingsFromFile.FirstOrDefault(x => x.JobLink == jobLink1);
+
+            Assert.That(updatedItem, Is.EqualTo(job1).Using(new JobListingComparer()), "The updated item did not have the correct ContactInformation");
+            Assert.That(updatedItem.ContactInformation, Is.EqualTo(updatedContactInformation), "The re-loaded JobListing from file does not contain the same object.");
+        }
     }
 }
