@@ -115,7 +115,29 @@ namespace SeleniumDemo
                 TestContext.WriteLine($"Validated that the TSV file contains {records.Count} job listings.");
                 }
             }
+        
+public static List<JobListing> LoadJobListingsFromFile(string fileName) {
+            var jobListings = new List<JobListing>();
 
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture) {
+                Delimiter = "\t",
+                MissingFieldFound = null, // Ignore missing fields
+                HeaderValidated = null   // Ignore header validation
+                };
+
+            using (var reader = new StreamReader(fileName))
+            using (var csv = new CsvReader(reader, config)) {
+                try {
+                    jobListings = csv.GetRecords<JobListing>().ToList();
+                    } catch (Exception ex) {
+                    TestContext.WriteLine($"Error reading file {fileName}: {ex.Message}");
+                    throw;
+                    }
+                }
+
+            TestContext.WriteLine($"Loaded {jobListings.Count} job listings from file: {fileName}");
+            return jobListings;
+            }
     public static string ExtactContactInfoFromHtml(string html)
     {
         var results = new List<string>();
