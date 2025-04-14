@@ -6,6 +6,7 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using SeleniumDemo;
 using SeleniumDemo.Models;
+using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -23,7 +24,8 @@ namespace SeleniumDemo
             return new string(input.Where(ch => !invalidCharsForWindowsAndLinux.Contains(ch)).ToArray());
             }
 
-        public static string ReplaceBadCharactersInFilePath(string input) {
+        public static string ReplaceBadCharactersInFilePath(string input) 
+        {
             return input.Replace(":", "_")
                 .Replace("//", "_").
                 Replace("/", "_").
@@ -33,7 +35,15 @@ namespace SeleniumDemo
                 Replace("%", "_").
                 Replace(")", "_").
                 Replace("(", "_");
-            }
+        }
+        public static string GenerateTsvFileNameForUrl(string url)
+        {
+            var fileName = SeleniumTestsHelpers.RemoveInvalidChars(SeleniumTestsHelpers.ReplaceBadCharactersInFilePath(url));
+            var tsvFilePath = $"JobListings_{fileName}.tsv";
+
+            return tsvFilePath;
+        }
+
 
         public static string? ExtractHref(string addDomainToJobPaths, IWebElement jobNode) 
         {
@@ -79,7 +89,7 @@ namespace SeleniumDemo
             throw new StaleElementReferenceException($"Element is stale after {retryCount} retries");
         }
 
-        public static void WriteToFile(List<JobListing> results, string tsvFilePath) {
+        public static void WriteListOfJobsToFile(List<JobListing> results, string tsvFilePath) {
             // Log the job listings
             foreach (var jobListing in results) {
                 TestContext.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
@@ -115,8 +125,67 @@ namespace SeleniumDemo
                 TestContext.WriteLine($"Validated that the TSV file contains {records.Count} job listings.");
                 }
             }
+
+        public static void WriteToFile(JobListings results, string tsvFilePath) {
+            // Log the job listings
+            foreach (var jobListing in results.JobListingsList) {
+                TestContext.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
+                }
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture) {
+                Delimiter = "\t"
+                };
+
+            using (var writer = new StreamWriter(tsvFilePath))
+            using (var csv = new CsvWriter(writer, config)) {
+                csv.WriteHeader<JobListing>();
+                csv.NextRecord();
+                foreach (var jobListing in results.JobListingsList) {
+                    // Remove invalid characters
+                    jobListing.Title = RemoveInvalidChars(jobListing.Title);
+                    jobListing.Description = RemoveInvalidChars(jobListing.Description);
+                    if (!string.IsNullOrEmpty(jobListing.JobLink)) // Ensure JobLink is not empty
+                    {
+                        csv.WriteRecord(jobListing);
+                        csv.NextRecord();
+                        } else {
+                        TestContext.WriteLine($"JobLink is empty for job listing: {jobListing.Title}");
+                        }
+                    }
+                }
+
+            TestContext.WriteLine($"TSV file created: {tsvFilePath}");
+            using (var reader = new StreamReader(tsvFilePath))
+            using (var csvR = new CsvReader(reader, config)) {
+                var records = csvR.GetRecords<JobListing>().ToList();
+                Assert.That(records.Count, Is.GreaterThan(0), "The TSV file does not contain any job listings.");
+                TestContext.WriteLine($"Validated that the TSV file contains {records.Count} job listings.");
+                }
+            }
         
-public static List<JobListing> LoadJobListingsFromFile(string fileName) {
+public static JobListings LoadJobListingsFromFile(string fileName) {
+            var jobListings = new JobListings();
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture) {
+                Delimiter = "\t",
+                MissingFieldFound = null, // Ignore missing fields
+                HeaderValidated = null   // Ignore header validation
+                };
+
+            using (var reader = new StreamReader(fileName))
+            using (var csv = new CsvReader(reader, config)) {
+                try {
+                    jobListings.JobListingsList = csv.GetRecords<JobListing>().ToList();
+                    } catch (Exception ex) {
+                    TestContext.WriteLine($"Error reading file {fileName}: {ex.Message}");
+                    throw;
+                    }
+                }
+
+            TestContext.WriteLine($"Loaded {jobListings.JobListingsList.Count} job listings from file: {fileName}");
+            return jobListings;
+            }
+    public static List<JobListing> LoadListOfJobsingsFromFile(string fileName) {
             var jobListings = new List<JobListing>();
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture) {

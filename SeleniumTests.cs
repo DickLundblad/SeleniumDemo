@@ -164,9 +164,10 @@ namespace SeleniumDemo
                 jobListing.ApplyLink = updatedJobListing.ApplyLink;
               }
 
-            var fileName = SeleniumTestsHelpers.RemoveInvalidChars(SeleniumTestsHelpers.ReplaceBadCharactersInFilePath(url));
-            var tsvFilePath = $"JobListings_{fileName}.tsv";
-            SeleniumTestsHelpers.WriteToFile(jobListings, tsvFilePath);
+            //var fileName = SeleniumTestsHelpers.RemoveInvalidChars(SeleniumTestsHelpers.ReplaceBadCharactersInFilePath(url));
+            //var tsvFilePath = $"JobListings_{fileName}.tsv";
+            var tsvFilePath =  SeleniumTestsHelpers.GenerateTsvFileNameForUrl(url);
+            SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, tsvFilePath);
         }
 
         [TestCase("https://jobbsafari.se/jobb/digital-radio-system-designer-sesri-19207406", 0)]

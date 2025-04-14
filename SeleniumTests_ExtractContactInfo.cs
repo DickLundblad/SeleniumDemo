@@ -49,7 +49,8 @@ namespace SeleniumDemo
             {
                 TestContext.WriteLine($"Title node not found");
                 response = null;
-             }
+            }
+            TestContext.WriteLine($"Extracted Title: {response}");
             return response;
          }
 
