@@ -1,0 +1,63 @@
+﻿namespace SeleniumDemo
+{
+    [TestFixture]
+    public class TestHelpersTests
+    {
+
+        [TestCase("2025-04-15", "JobbSafari_automation-engineer-level-1-cold-mill-ssste-19223651.txt")]
+        [TestCase("2025-04-15", "JobbSafari_automation-engineer-level-2-ssste-19223731.txt")]
+        [TestCase("", "Linked_in_factor_10.txt")]
+        [TestCase("1 dag sedan", "Monster_Meror_rekrytering.txt")]
+        [TestCase("", "se_indeed_com_Tutor_AI_Trainer.txt")]
+        [TestCase("", "se_jooble_Bilplatslagare.txt")]
+        public void TestExtractPublishedInfo(string expected, string fileName)
+        {
+            string text = ReadFileContent(fileName);
+            var result = SeleniumTestsHelpers.ExtractPublishedInfo(text);
+
+            Assert.That(result, Is.EqualTo(expected));
+        }
+
+        [TestCase("Boden", "JobbSafari_automation-engineer-level-1-cold-mill-ssste-19223651.txt")]
+        [TestCase("Boden", "JobbSafari_automation-engineer-level-2-ssste-19223731.txt")]
+        [TestCase("", "Linked_in_factor_10.txt")]
+        [TestCase("", "Monster_Meror_rekrytering.txt")]
+        [TestCase("", "se_indeed_com_Tutor_AI_Trainer.txt")]
+        [TestCase("", "se_jooble_Bilplatslagare.txt")]
+        public void TestExtractAreaInfo(string expected, string fileName)
+        {
+            string text = ReadFileContent(fileName);
+            var result = SeleniumTestsHelpers.ExtactAreaInfo(text);
+
+            Assert.That(result, Is.EqualTo(expected));
+        }
+
+        [TestCase("", "JobbSafari_automation-engineer-level-1-cold-mill-ssste-19223651.txt")]
+        [TestCase("", "JobbSafari_automation-engineer-level-2-ssste-19223731.txt")]
+        [TestCase("", "Linked_in_factor_10.txt")]
+        [TestCase("", "Monster_Meror_rekrytering.txt")]
+        [TestCase("", "se_indeed_com_Tutor_AI_Trainer.txt")]
+        [TestCase("", "se_jooble_Bilplatslagare.txt")]
+        public void TestExtractJobTitle(string expected, string fileName)
+        {
+            string text = ReadFileContent(fileName);
+            var result = SeleniumTestsHelpers.ExtactDataTestIdjobTitleText(text);
+
+            Assert.That(result, Is.EqualTo(expected));
+        }
+
+        public string ReadFileContent(string fileName)
+        {
+            // Define the file path relative to the project directory
+            string filePath = Path.Combine("TestData", "OfflinePages","Body",fileName);
+
+            // Ensure the file exists before attempting to read
+            Assert.That(File.Exists(filePath), Is.True, $"File not found: {filePath}");
+
+            // Read the file content
+            string fileContent = File.ReadAllText(filePath);
+
+            return fileContent;
+        }
+    }
+}
