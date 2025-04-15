@@ -73,6 +73,7 @@ namespace SeleniumDemo
         {
         }
 
+        [Category("live")]
         [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]")]
         [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]")]
         [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]")]
@@ -94,6 +95,7 @@ namespace SeleniumDemo
             TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
         }
 
+        [Category("live")]
         [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "https://jobbsafari.se")]
         [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]", "")]
         [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]", "")]
@@ -125,6 +127,7 @@ namespace SeleniumDemo
             }
         }
 
+        [Category("live")]
         [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "https://jobbsafari.se")]
         [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]", "")]
         [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]", "", 2000)]
@@ -183,7 +186,7 @@ namespace SeleniumDemo
             Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
         }
 
-
+        [Category("live")]
         [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*Joblistings*.tsv")]
         public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern)
         {
