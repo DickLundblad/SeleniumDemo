@@ -210,6 +210,68 @@ namespace SeleniumDemo
             TestContext.WriteLine($"Loaded {jobListings.JobListingsList.Count} job listings from file: {fileName}");
             return jobListings;
         }
+        public static string ExtractTextUsingRegexp(string text, string regExp)
+        {
+          var match = Regex.Match(text, regExp);
+          string res = match.Success ? match.Groups[1].Value.Trim() : "";
+          return res;
+        }
+        public static string ExtractTextUsingRegexp(string text, string regExp, int groupIndex)
+        {
+            var match = Regex.Match(text, regExp);
+            string res = match.Success ? match.Groups[groupIndex].Value.Trim() : "";
+            return res;
+        }
+
+         public static string ExtactDataTestIdjobTitleText(string html)
+        {
+            string pattern =  @"data-testid\s*=\s*""jobTitle""[^>]*>(.*?)<\/";
+            var res = ExtractTextUsingRegexp(html, pattern);
+            return res;
+        }
+         public static string ExtactPostedInfo(string html)
+        {
+            string pattern =  @"Reposted (\d+) days ago";
+            var res = ExtractTextUsingRegexp(html, pattern);
+            if (res != "")
+            {
+                res = ($"Posted {res} days ago");
+            }
+            return res;
+        }
+
+         public static string ExtactPublishedInfo(string html)
+        {
+            string swedishPattern =  @"Publicerad\s+(\d{4}-\d{2}-\d{2})";
+            string englishPattern =  @"Publicerad\s+(\d{4}-\d{2}-\d{2})";
+            var res = ExtractTextUsingRegexp(html, swedishPattern);
+            if (res == "")
+            {
+                res = ExtractTextUsingRegexp(html, englishPattern);
+            }
+            if (res == "")
+            {
+                res = ExtactPostedInfo(html);
+            }
+            return res;
+        }
+        public static string ExtactCompanyInfo(string html)
+        {
+            string pattern = @"Företag\s*[:\-]?\s*(.+)";
+            var res = ExtractTextUsingRegexp(html, pattern);
+            return res;
+        }
+        public static string ExtactAreaInfo(string html)
+        {
+            string swedishPattern = @"Område\s*\n([^\n\r]+)";
+            string englishPattern = @"Area\s*\n([^\n\r]+)";
+            var res = ExtractTextUsingRegexp(html, swedishPattern);
+            if (res == "")
+            {
+                res = ExtractTextUsingRegexp(html, englishPattern);
+            }
+            return res;
+        }
 
         public static string ExtactContactInfoFromHtml(string html)
         {
@@ -227,8 +289,12 @@ namespace SeleniumDemo
                     results.Add($"{before} {contact} {after}".Trim());
                 }
             }
-
-            return string.Join(", ", results);
+            var res = string.Join(", ", results);
+            var companyName = ExtactCompanyInfo(html);
+            var areaName = ExtactAreaInfo(html);
+            var posted = ExtactPostedInfo(html);
+            res = companyName + " " + areaName +" " + posted + " " + res;
+            return res;
         }
 
         public static string ExtractPhoneNumbersFromAreaCodeExtractions(string html, string countryCode = "+46")

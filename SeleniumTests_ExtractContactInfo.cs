@@ -10,48 +10,80 @@ namespace SeleniumDemo
         {
             string response = string.Empty;
             var bodyNode = driver.FindElement(By.XPath("//body"));
+            string prompt = $@"extract contact information and roles from this text in the same language as the text: {bodyNode.Text}";
+            response = ChatGPTSearch(prompt);
 
-            if (_chatService != null)
-            {
-                TestContext.WriteLine($"Using ChatGPT to extract contact Info");
-                string prompt = $@"extract contact information and roles from this text in the same language as the text: {bodyNode.Text}";
-                var task = _chatService.GetChatResponse(prompt);
-                if (task != null)
-                {
-                    response = task.Result;
-                }
-                if (response != string.Empty)
-                {
-                    return response;
-                }
-                else
-                {
-                    TestContext.WriteLine($"ChatGPT returned empty response for prompt: {prompt}");
-                }
-            }
-            response = SeleniumTestsHelpers.ExtractPhoneNumbersFromAreaCodeExtractions(bodyNode.Text);
-
-            if (string.IsNullOrEmpty(response))
+            // fallback solutions
+            if (string.IsNullOrWhiteSpace(response))
             {
                 response = SeleniumTestsHelpers.ExtactContactInfoFromHtml(bodyNode.Text);
             }
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                response = SeleniumTestsHelpers.ExtractPhoneNumbersFromAreaCodeExtractions(bodyNode.Text);
+            }
+
             TestContext.WriteLine($"Extracted ContactInfo: {response}");
             return response;
         }
         public string ExtractTitle()
         {
             string response = string.Empty;
+            var bodyNode = driver.FindElement(By.XPath("//body"));
+            string prompt = $@"extract job title from this text in the same language as the text: {bodyNode.Text}";
+            response = ChatGPTSearch(prompt);
 
-            IWebElement? titleNode = TryFindElement("//h1");
-            if (titleNode != null)
+            // fallback solutions
+            if (string.IsNullOrEmpty(response))
             {
-                response = titleNode.Text;
+                IWebElement? titleNode = TryFindElement("//h1");
+                if (titleNode != null)
+                {
+                    response = titleNode.Text;
+                }
+                else
+                {
+                    SeleniumTestsHelpers.ExtactDataTestIdjobTitleText(bodyNode.Text);
+                }
+                TestContext.WriteLine($"Extracted Title: {response}");
             }
-            else
+            return response;
+        }
+
+        public string ExtractPublishedDate()
+        {
+            string response = string.Empty;
+            var bodyNode = driver.FindElement(By.XPath("//body"));
+            string prompt = $@"extract published date from this text in the same language as the text: {bodyNode.Text}";
+            response = ChatGPTSearch(prompt);
+
+            // fallback solution using regex
+            if (string.IsNullOrEmpty(response))
             {
-                TestContext.WriteLine($"Title node not found");
+                response = SeleniumTestsHelpers.ExtactPublishedInfo(bodyNode.Text);
             }
-            TestContext.WriteLine($"Extracted Title: {response}");
+
+            TestContext.WriteLine($"Extracted Published Date: {response}");
+            return response;
+        }
+
+        public string ChatGPTSearch(string prompt)
+        { 
+            string response  = string.Empty;
+            if (_chatService != null)
+            {
+                TestContext.WriteLine($"Using ChatGPT to extract Info, {prompt}");
+                
+                var task = _chatService.GetChatResponse(prompt);
+                if (task != null)
+                {
+                    response = task.Result;
+                }
+                if (response == string.Empty)
+                {
+                   TestContext.WriteLine($"ChatGPT returned empty response for prompt");
+                }
+            }
             return response;
         }
 

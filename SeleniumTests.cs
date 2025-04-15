@@ -39,16 +39,20 @@ namespace SeleniumDemo
 
                 try
                 {
+                    LoadEnvironmentVariables();
                     TestContext.WriteLine("Connected to existing browser");
                     TestContext.WriteLine("Current URL: " + driver.Url);
 
                     // Example: open a new tab and navigate
                     driver.Navigate().GoToUrl("https://example.com");
-                    // read from .env file instead
-                    var chatGPTAPIKey = "";
+                    var chatGPTAPIKey = Environment.GetEnvironmentVariable("CHAT_GPT_API_KEY");
                     if (!string.IsNullOrEmpty(chatGPTAPIKey))
                     {
                         _chatService = new ChatGPTService(chatGPTAPIKey);
+                    }
+                    else
+                    {
+                        TestContext.WriteLine("CHATGPT_API_KEY is not set in the .env file.");
                     }
                 }
                 catch (Exception ex)
@@ -215,14 +219,7 @@ namespace SeleniumDemo
             bool IsDocumentReady = wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
         }
 
-        private string ExtractPublishedDate()
-        {
-            string response = string.Empty;
 
-            TestContext.WriteLine($"Extracted.PublishedDate: {response}");
-
-            return response;
-        }
 
         [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*Joblistings*.tsv")]
         public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern)
@@ -368,6 +365,29 @@ namespace SeleniumDemo
             {
                 TestContext.WriteLine($"Error: {ex.Message}");
                 return string.Empty;
+            }
+        }
+
+        private void LoadEnvironmentVariables()
+        {
+            var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+            if (File.Exists(envFilePath))
+            {
+                var lines = File.ReadAllLines(envFilePath)
+                    .Where(line => !string.IsNullOrWhiteSpace(line) && !line.StartsWith("#"));
+
+                foreach (var line in lines)
+                {
+                    var parts = line.Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+                    }
+                }
+            }
+            else
+            {
+                TestContext.WriteLine(".env file not found.");
             }
         }
 
