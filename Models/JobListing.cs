@@ -4,7 +4,6 @@
     {
         public string Title { get; set; } = string.Empty;
         public string JobLink { get; set; } = string.Empty;
-
         public string Published { get; set; } = string.Empty;
         public string EndDate { get; set; } = string.Empty;
         public string ContactInformation { get; set; } = string.Empty;

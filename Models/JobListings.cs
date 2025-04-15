@@ -2,23 +2,26 @@
 namespace SeleniumDemo.Models
 {
     public class JobListings
-        {
+    {
         private List<JobListing> jobListings;
 
-        public JobListings() 
+        public JobListings()
         {
             jobListings = new List<JobListing>();
         }
 
-        public List<JobListing> JobListingsList {
+        public List<JobListing> JobListingsList
+        {
             get { return jobListings; }
             set { jobListings = value; }
-            }
-        public bool InsertOrUpdate(JobListing job) {
+        }
+
+        public bool InsertOrUpdate(JobListing job)
+        {
             var comparer = new JobListingComparer();
             var existingJob = jobListings.FirstOrDefault(j => comparer.Equals(j, job));
 
-            if (existingJob != null) 
+            if (existingJob != null)
             {
                 // Update the existing job
                 existingJob.Title = job.Title;
@@ -30,13 +33,14 @@ namespace SeleniumDemo.Models
 
                 TestContext.WriteLine($"Job updated: {job.JobLink}");
                 return true; // Job updated successfully
-            } else 
+            }
+            else
             {
                 // Insert the new job
                 jobListings.Add(job);
                 TestContext.WriteLine($"Job added: {job.JobLink}");
                 return true; // Job added successfully
             }
-         }
-     }
+        }
+    }
 }
