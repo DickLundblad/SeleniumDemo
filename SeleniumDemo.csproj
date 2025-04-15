@@ -27,4 +27,29 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TestData\OfflinePages\Body\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TestData\OfflinePages\Body\JobbSafari_automation-engineer-level-1-cold-mill-ssste-19223651.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\OfflinePages\Body\JobbSafari_automation-engineer-level-2-ssste-19223731.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\OfflinePages\Body\Linked_in_factor_10.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\OfflinePages\Body\Monster_Meror_rekrytering.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\OfflinePages\Body\se_indeed_com_Tutor_AI_Trainer.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\OfflinePages\Body\se_jooble_Bilplatslagare.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

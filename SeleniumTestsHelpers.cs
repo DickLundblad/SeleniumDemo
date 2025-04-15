@@ -1,12 +1,8 @@
-﻿using ClosedXML.Excel;
-using CsvHelper;
+﻿using CsvHelper;
 using CsvHelper.Configuration;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Support.UI;
-using SeleniumDemo;
 using SeleniumDemo.Models;
-using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -210,17 +206,17 @@ namespace SeleniumDemo
             TestContext.WriteLine($"Loaded {jobListings.JobListingsList.Count} job listings from file: {fileName}");
             return jobListings;
         }
-        public static string ExtractTextUsingRegexp(string text, string regExp)
+        private static string ExtractTextUsingRegexp(string text, string regExp)
         {
           var match = Regex.Match(text, regExp);
           string res = match.Success ? match.Groups[1].Value.Trim() : "";
           return res;
         }
-        public static string ExtractTextUsingRegexp(string text, string regExp, int groupIndex)
+        private static string ExtractWholeValueFromTextUsingRegexp(string text, string regExp)
         {
-            var match = Regex.Match(text, regExp);
-            string res = match.Success ? match.Groups[groupIndex].Value.Trim() : "";
-            return res;
+          var match = Regex.Match(text, regExp);
+          string res = match.Success ? match.Value.Trim() : "";
+          return res;
         }
 
          public static string ExtactDataTestIdjobTitleText(string html)
@@ -229,6 +225,14 @@ namespace SeleniumDemo
             var res = ExtractTextUsingRegexp(html, pattern);
             return res;
         }
+        public static string ExtactSinceInfo(string html)
+        {
+            string pattern = @"(en|ett|\d+)\s+(dagar|månad|månader|dag|timme|timmar)\s+sedan";
+            var res = ExtractWholeValueFromTextUsingRegexp(html, pattern);
+            
+            return res;
+        }
+
          public static string ExtactPostedInfo(string html)
         {
             string pattern =  @"Reposted (\d+) days ago";
@@ -240,7 +244,7 @@ namespace SeleniumDemo
             return res;
         }
 
-         public static string ExtactPublishedInfo(string html)
+         public static string ExtractPublishedInfo(string html)
         {
             string swedishPattern =  @"Publicerad\s+(\d{4}-\d{2}-\d{2})";
             string englishPattern =  @"Publicerad\s+(\d{4}-\d{2}-\d{2})";
@@ -253,12 +257,23 @@ namespace SeleniumDemo
             {
                 res = ExtactPostedInfo(html);
             }
+            if (res == "")
+            {
+                res = ExtactSinceInfo(html);
+            }
+            //Den lediga tjänsten publicerades en månad sedan
             return res;
         }
         public static string ExtactCompanyInfo(string html)
         {
-            string pattern = @"Företag\s*[:\-]?\s*(.+)";
-            var res = ExtractTextUsingRegexp(html, pattern);
+            string swedishPattern = @"Företag\s*[:\-]?\s*(.+)";
+            string englishPattern = @"Company\s*[:\-]?\s*(.+)";
+            var res = ExtractTextUsingRegexp(html, swedishPattern);
+
+            if (res == "")
+            {
+                res = ExtractTextUsingRegexp(html, englishPattern);
+            }
             return res;
         }
         public static string ExtactAreaInfo(string html)
@@ -266,6 +281,7 @@ namespace SeleniumDemo
             string swedishPattern = @"Område\s*\n([^\n\r]+)";
             string englishPattern = @"Area\s*\n([^\n\r]+)";
             var res = ExtractTextUsingRegexp(html, swedishPattern);
+
             if (res == "")
             {
                 res = ExtractTextUsingRegexp(html, englishPattern);

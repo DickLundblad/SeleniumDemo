@@ -60,7 +60,7 @@ namespace SeleniumDemo
             // fallback solution using regex
             if (string.IsNullOrEmpty(response))
             {
-                response = SeleniumTestsHelpers.ExtactPublishedInfo(bodyNode.Text);
+                response = SeleniumTestsHelpers.ExtractPublishedInfo(bodyNode.Text);
             }
 
             TestContext.WriteLine($"Extracted Published Date: {response}");

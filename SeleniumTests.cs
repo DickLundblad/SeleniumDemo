@@ -9,7 +9,7 @@ namespace SeleniumDemo
     public partial class SeleniumTests
     {
         private ChromeDriver driver; // Changed type from IWebDriver to ChromeDriver for improved performance
-        private ChatGPTService _chatService;
+        private ChatGPTService? _chatService;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
@@ -168,9 +168,11 @@ namespace SeleniumDemo
             SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, tsvFilePath);
         }
 
+        [Category("live")]
         [TestCase("https://jobbsafari.se/jobb/digital-radio-system-designer-sesri-19207406", 0)]
         [TestCase("https://www.linkedin.com/jobs/view/4194781616/?eBP=BUDGET_EXHAUSTED_JOB&refId=wqmOM1Whbos%2BqR2hax6d%2BQ%3D%3D&trackingId=Y31jWZzmfvJYm7mUln7UBQ%3D%3D&trk=flagship3_job_collections_leaf_page", 0)]
         [TestCase("https://se.jooble.org/desc/-154934751721925931?ckey=NONE&rgn=-1&pos=1&elckey=3819297206643930044&pageType=20&p=1&jobAge=2608&relb=140&brelb=100&bscr=112&scr=156.8&premImp=1", 0)]
+        [TestCase("https://se.jooble.org/desc/-2750184788513872086?ckey=NONE&rgn=-1&pos=3&elckey=3819297206643930044&pageType=20&p=1&jobAge=766&relb=100&brelb=100&bscr=88.1224&scr=88.1224", 2000)]
         [TestCase("https://jobbsafari.se/jobb/solution-architect-intralogistics-development-supply-chain-development-siske-19207507", 0)]
         [TestCase("https://jobbsafari.se/jobb/rd-specialist-till-essentias-protein-solutions-sesmp-19206771", 0)]
         [TestCase("https://www.monster.se/jobberbjudande/it-tekniker-till-internationellt-f%C3%B6retag-malm%C3%B6-sk%C3%A5ne--24828633-9781-4533-95c8-6dc9c2758f21?sid=755339e0-795d-402e-b468-2e6ca4790ae9&jvo=m.mp.s-svr.1&so=m.s.lh&hidesmr=1", 2000)]
@@ -181,6 +183,38 @@ namespace SeleniumDemo
             Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
         }
 
+
+        [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*Joblistings*.tsv")]
+        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern)
+        {
+            var files = GetFileNames(filePattern);
+            if (files != null)
+            {
+                WriteToExcelSheetUsingClosedXML(fileName, files);
+            }
+            else
+            {
+                TestContext.WriteLine($"No files found with pattern: {filePattern}");
+            }
+        }
+
+
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+            driver.Quit();
+            driver.Dispose();
+        }
+        private string[]? GetFileNames(string searchPatternForFiles)
+        {
+            var files = Directory.GetFiles(Directory.GetCurrentDirectory(), searchPatternForFiles);
+            if (files.Length == 0)
+            {
+                TestContext.WriteLine("No TSV files found.");
+                return null;
+            }
+            return files;
+        }
         private JobListing OpenAndParseJobLink(string url, int delayUserInteraction)
         {
             var jobListing = new JobListing();
@@ -217,33 +251,6 @@ namespace SeleniumDemo
         private static void WaitForDocumentReady(WebDriverWait wait)
         {
             bool IsDocumentReady = wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
-        }
-
-
-
-        [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*Joblistings*.tsv")]
-        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern)
-        {
-            var files = GetFileNames(filePattern);
-            if (files != null)
-            {
-                WriteToExcelSheetUsingClosedXML(fileName, files);
-            }
-            else
-            {
-                TestContext.WriteLine($"No files found with pattern: {filePattern}");
-            }
-        }
-
-        private string[]? GetFileNames(string searchPatternForFiles)
-        {
-            var files = Directory.GetFiles(Directory.GetCurrentDirectory(), searchPatternForFiles);
-            if (files.Length == 0)
-            {
-                TestContext.WriteLine("No TSV files found.");
-                return null;
-            }
-            return files;
         }
 
         /// <summary>
@@ -347,13 +354,6 @@ namespace SeleniumDemo
             }
         }
 
-        [OneTimeTearDown]
-        public void TearDown()
-        {
-            driver.Quit();
-            driver.Dispose();
-        }
-
         private string GetElementTextOnCurrentPage(string xPath)
         {
             try
@@ -389,25 +389,6 @@ namespace SeleniumDemo
             {
                 TestContext.WriteLine(".env file not found.");
             }
-        }
-
-        private string GetAllHtmlOnCurrentPage()
-        {
-            try
-            {
-                return driver.PageSource;
-            }
-            catch (Exception ex)
-            {
-                TestContext.WriteLine($"Error: {ex.Message}");
-                return string.Empty;
-            }
-        }
-
-        private void RefreshPage()
-        {
-            driver.Navigate().Refresh();
-            TestContext.WriteLine("Page has been refreshed.");
         }
     }
 }
