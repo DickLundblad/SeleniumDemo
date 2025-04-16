@@ -242,6 +242,10 @@ namespace SeleniumDemo
                     TestContext.WriteLine($"Error during WaitForDocumentReady() : {ex.Message}");
                 }
                 Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on jobLink page: {url}");
+                if (url.Contains("linkedin"))
+                { 
+                    ShowMore();
+                }
                 // extract info on page
                 jobListing.Title = ExtractTitle();
                 jobListing.ContactInformation = ExtractContactInfo();
@@ -327,6 +331,58 @@ namespace SeleniumDemo
             }
             catch (NoSuchElementException)
             {
+            }
+        }
+
+        private void ShowMore()
+        {
+            try
+            {
+                // Wait for the button to be clickable (recommended)
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            
+                // Option 1: Using aria-label (most reliable)
+
+                    // Replace the usage of ExpectedConditions with WebDriverWait's lambda-based approach
+                    try
+                    {
+                        // Wait for the button to be clickable using a lambda expression
+                        IWebElement seeMoreButton = wait.Until(driver =>
+                            driver.FindElement(By.CssSelector("button[aria-label='Click to see more description']")));
+
+                        // Scroll into view if needed
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", seeMoreButton);
+
+                        // Click the button
+                        seeMoreButton.Click();
+                        Console.WriteLine($"Clicked see more button");
+                    }
+                    catch (NoSuchElementException ex)
+                    {
+                        Console.WriteLine($"Button not found: {ex.Message}");
+                    }
+                    catch (ElementClickInterceptedException ex)
+                    {
+                        Console.WriteLine($"Could not click button: {ex.Message}");
+                        // You might need to handle overlays or add more wait time here
+                    }
+
+            
+                // Alternative: Option 2 using XPath
+                /*
+                IWebElement seeMoreButton = wait.Until(ExpectedConditions.ElementToBeClickable(
+                    By.XPath("//button[.//span[contains(text(), 'See more')]]"));
+                seeMoreButton.Click();
+                */
+            }
+            catch (NoSuchElementException ex)
+            {
+                Console.WriteLine($"Button not found: {ex.Message}");
+            }
+            catch (ElementClickInterceptedException ex)
+            {
+                Console.WriteLine($"Could not click button: {ex.Message}");
+                // You might need to handle overlays or add more wait time here
             }
         }
 

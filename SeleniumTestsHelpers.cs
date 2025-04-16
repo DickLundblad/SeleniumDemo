@@ -396,5 +396,62 @@ namespace SeleniumDemo
                 workbook.SaveAs(fileName);
             }
         }
+
+        internal static void WriteToExcel(ListingsOverview overView, string fileNameJobListing)
+        {
+            // Create Excel file with ListingsOverview
+            var excelFileName = $"{fileNameJobListing}.xlsx";
+            using (var workbook = new ClosedXML.Excel.XLWorkbook())
+            {
+                foreach (var listing in overView.JobListings)
+                {
+                    var worksheet = workbook.Worksheets.Add(listing.Name);
+                    worksheet.Cell(1, 1).Value = "Job Link";
+
+                    int row = 2;
+                    foreach (var job in listing.JobListingsList)
+                    {
+                        worksheet.Cell(row, 1).Value = job.JobLink;
+                        row++;
+                    }
+                }
+
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), excelFileName);
+                workbook.SaveAs(filePath);
+            }
+        }
+
+        internal static ListingsOverview LoadListingsOverviewFromFile(string fileNameOverview)
+        {
+            var listingsOverview = new ListingsOverview();
+
+            using (var workbook = new XLWorkbook(fileNameOverview))
+            {
+                foreach (var worksheet in workbook.Worksheets)
+                {
+                    var jobListings = new JobListings(worksheet.Name);
+
+                    for (int row = 2; row <= worksheet.LastRowUsed().RowNumber(); row++) // Assuming first row is header
+                    {
+                        var jobListing = new JobListing
+                        {
+                            Title = worksheet.Cell(row, 1).GetValue<string>(),
+                            JobLink = worksheet.Cell(row, 2).GetValue<string>(),
+                            Published = worksheet.Cell(row, 3).GetValue<string>(),
+                            EndDate = worksheet.Cell(row, 4).GetValue<string>(),
+                            ContactInformation = worksheet.Cell(row, 5).GetValue<string>(),
+                            Description = worksheet.Cell(row, 6).GetValue<string>(),
+                            ApplyLink = worksheet.Cell(row, 7).GetValue<string>()
+                        };
+
+                        jobListings.InsertOrUpdate(jobListing);
+                    }
+
+                    listingsOverview.InsertOrUpdate(jobListings);
+                }
+            }
+
+            return listingsOverview;
+        }
     }
 }
