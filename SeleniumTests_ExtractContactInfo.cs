@@ -72,12 +72,12 @@ namespace SeleniumDemo
             string response  = string.Empty;
             if (_chatService != null)
             {
-                TestContext.WriteLine($"Using ChatGPT to extract Info, {prompt}");
-                
+                TestContext.WriteLine($"Using ChatGPT to extract Info, {prompt}");       
                 var task = _chatService.GetChatResponse(prompt);
                 if (task != null)
                 {
                     response = task.Result;
+                    TestContext.WriteLine($"Result from ChatGPT: {prompt}");
                 }
                 if (response == string.Empty)
                 {

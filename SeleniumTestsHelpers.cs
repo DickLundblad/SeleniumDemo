@@ -1,4 +1,5 @@
-﻿using CsvHelper;
+﻿using ClosedXML.Excel;
+using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using OpenQA.Selenium;
@@ -34,10 +35,11 @@ namespace SeleniumDemo
                         .Replace("(", "_");
         }
 
-        public static string GenerateTsvFileNameForUrl(string url)
+        public static string GenerateFileNameForUrl(string url)
         {
-            var fileName = SeleniumTestsHelpers.RemoveInvalidChars(SeleniumTestsHelpers.ReplaceBadCharactersInFilePath(url));
-            var tsvFilePath = $"JobListings_{fileName}.tsv";
+            var fileName = RemoveInvalidChars(SeleniumTestsHelpers.ReplaceBadCharactersInFilePath(url));
+            var truncatedFileName = fileName.Substring(7, 36);
+            var tsvFilePath = $"JL_{truncatedFileName}";
 
             return tsvFilePath;
         }
@@ -88,9 +90,19 @@ namespace SeleniumDemo
             throw new StaleElementReferenceException($"Element is stale after {retryCount} retries");
         }
 
-        public static void WriteListOfJobsToFile(List<JobListing> results, string tsvFilePath)
+        public static void WriteListOfJobsToFile(List<JobListing> results, string tsvFilePath, string folder="")
         {
-            // Log the job listings
+            if (!tsvFilePath.EndsWith(".tsv"))
+            {
+                tsvFilePath += ".tsv";
+            }
+            if (!string.IsNullOrEmpty(folder))
+            {
+                EnsureFolderExists(folder);
+                tsvFilePath = Path.Combine(folder, tsvFilePath);
+            }
+
+
             foreach (var jobListing in results)
             {
                 TestContext.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
@@ -135,6 +147,10 @@ namespace SeleniumDemo
 
         public static void WriteToFile(JobListings results, string tsvFilePath)
         {
+            if (!tsvFilePath.EndsWith(".tsv"))
+            {
+                tsvFilePath += ".tsv";
+            }
             // Log the job listings
             foreach (var jobListing in results.JobListingsList)
             {
@@ -180,7 +196,8 @@ namespace SeleniumDemo
 
         public static JobListings LoadJobListingsFromFile(string fileName)
         {
-            var jobListings = new JobListings();
+            var nameWithoutFileExtension = Path.GetFileNameWithoutExtension(fileName);
+            var jobListings = new JobListings(nameWithoutFileExtension);
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
@@ -188,6 +205,10 @@ namespace SeleniumDemo
                 MissingFieldFound = null, // Ignore missing fields
                 HeaderValidated = null   // Ignore header validation
             };
+            if (! fileName.EndsWith(".tsv"))
+            {
+                fileName += ".tsv";
+            }
 
             using (var reader = new StreamReader(fileName))
             using (var csv = new CsvReader(reader, config))
@@ -205,6 +226,19 @@ namespace SeleniumDemo
 
             TestContext.WriteLine($"Loaded {jobListings.JobListingsList.Count} job listings from file: {fileName}");
             return jobListings;
+        }
+
+        public static void EnsureFolderExists(string folderPath)
+        {
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+                TestContext.WriteLine($"Folder created: {folderPath}");
+            }
+            else
+            {
+                TestContext.WriteLine($"Folder already exists: {folderPath}");
+            }
         }
         private static string ExtractTextUsingRegexp(string text, string regExp)
         {
@@ -333,6 +367,34 @@ namespace SeleniumDemo
             }
 
             return string.Join(", ", result);
+        }
+        public static void CreateExcelFromExistingFiles(string fileName, string[] files)
+        { 
+            using (var workbook = new XLWorkbook())
+            {
+                foreach (var tsvFile in files)
+                {
+                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(tsvFile);
+                    if (fileNameWithoutExtension.Length > 31)
+                    {
+                        fileNameWithoutExtension = fileNameWithoutExtension.Substring(0, 31);
+                    }
+
+                    var worksheet = workbook.Worksheets.Add(fileNameWithoutExtension);
+                    int row = 1;
+
+                    foreach (var line in File.ReadLines(tsvFile))
+                    {
+                        var columns = line.Split('\t');
+                        for (int col = 0; col < columns.Length; col++)
+                        {
+                            worksheet.Cell(row, col + 1).Value = columns[col];
+                        }
+                        row++;
+                    }
+                }
+                workbook.SaveAs(fileName);
+            }
         }
     }
 }

@@ -9,12 +9,13 @@ namespace SeleniumDemo
         public void CreateJobListings()
         {
             var randomName = Guid.NewGuid().ToString(); // Generate a random name
-            var fileName = $"CreateJobListings_{randomName}.tsv";
-            JobListings jobListings = new JobListings();
+            var fileName = $"CreateJobListings_{randomName}";
+            var startPage = "https://www.linkedin.com/jobs/collections/it-services-and-it-consulting";
+            JobListings jobListings = new JobListings(fileName, startPage);
             var job1 = new JobListing() { JobLink = "https://www.linkedin.com/jobs/collections/it-services-and-it-consulting/?currentJobId=4170820433" };
             jobListings.InsertOrUpdate(job1);
             SeleniumTestsHelpers.WriteToFile(jobListings, fileName);
-            var findFileInfo = Directory.GetFiles(Directory.GetCurrentDirectory(), fileName);
+            var findFileInfo = Directory.GetFiles(Directory.GetCurrentDirectory(), $"{fileName}.*");
             Assert.That(findFileInfo.Length, Is.GreaterThan(0), "The file was not created.");
         }
 
@@ -22,9 +23,11 @@ namespace SeleniumDemo
         public void ReadJobListings()
         {
             var randomName = Guid.NewGuid().ToString(); // Generate a random name
-            var fileName = $"ReadJobListings_{randomName}.tsv";
+            var fileName = $"CreateJobListings_{randomName}";
             var jobLink = "https://www.linkedin.com/link1";
-            JobListings jobListings = new JobListings();
+            var startPage = "https://www.linkedin.com/jobs/collections/it-services-and-it-consulting";
+            JobListings jobListings = new JobListings(fileName, startPage);
+ 
             var job1 = new JobListing() { JobLink = jobLink };
             jobListings.InsertOrUpdate(job1);
 
@@ -41,11 +44,12 @@ namespace SeleniumDemo
         public void UpdateJobListings()
         {
             var randomName = Guid.NewGuid().ToString(); // Generate a random name
-            var fileName = $"UpdateJobListings_{randomName}.tsv";
+            var fileName = $"UpdateJobListings_{randomName}";
+            var startPage = "https://www.linkedin.com/jobs/collections/it-services-and-it-consulting";
             var jobLink = "https://www.linkedin.com/link1";
             var jobLink2 = "https://www.linkedin.com/link2";
             var updatedJobLink = "https://www.linkedin.com/updatedlink";
-            JobListings jobListings = new JobListings();
+            JobListings jobListings = new JobListings(fileName, startPage);
             var job1 = new JobListing() { JobLink = jobLink };
             var job2 = new JobListing() { JobLink = jobLink2 };
             jobListings.InsertOrUpdate(job1);
@@ -69,13 +73,14 @@ namespace SeleniumDemo
         public void UpdateExistingJobListing()
         {
             var randomName = Guid.NewGuid().ToString(); // Generate a random name
-            var fileName = $"UpdateExistingJobListings_{randomName}.tsv";
+            var fileName = $"UpdateExistingJobListings_{randomName}";
+            var startPage = "https://www.linkedin.com/jobs/collections/it-services-and-it-consulting";
             var contactInformation1 = "Original Contact Information 1";
             var contactInformation2 = "Original Contact Information 2";
             var updatedContactInformation = "updated Contact Information";
             var jobLink1 = "https://www.linkedin.com/link1";
             var jobLink2 = "https://www.linkedin.com/link2";
-            JobListings jobListings = new JobListings();
+            JobListings jobListings = new JobListings(fileName, startPage);
             var job1 = new JobListing() { JobLink = jobLink1, ContactInformation = contactInformation1 };
             var job2 = new JobListing() { JobLink = jobLink2, ContactInformation = contactInformation2 };
             jobListings.InsertOrUpdate(job1);

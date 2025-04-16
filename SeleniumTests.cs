@@ -128,12 +128,13 @@ namespace SeleniumDemo
         }
 
         [Category("live")]
-        [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "https://jobbsafari.se")]
-        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]", "")]
-        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]", "", 2000)]
-        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']", "", 2000)]
-        [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "")]
-        public void ValidateThatJoblinksCanBeRetrievedAndParsed(string url, string selectorXPathForJobEntry, string addDomainToJobPaths = "", int delayUserInteraction = 0)
+        [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "jobbsafari_se_data_och_it_newest", "https://jobbsafari.se")]
+        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]", "se_indeed_empty_what_where", "")]
+        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]","se_jooble_org", "", 2000)]
+        [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']", "monster_se_mjukvara_skane", "", 2000)]
+        [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "linkedin_com_it-services-and-it-consulting", "")]
+        [TestCase("https://www.linkedin.com/jobs/search/?currentJobId=4205944474&geoId=105117694&keywords=software&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true", "//div[@data-job-id]", "linkedin_com_software", "")]
+        public void ValidateThatJoblinksCanBeRetrievedAndParsed(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0)
         {
             ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
             driver.SwitchTo().Window(driver.WindowHandles.Last());
@@ -147,6 +148,7 @@ namespace SeleniumDemo
                 Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on start page {url}");
             }
             Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
+            
             TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
             List<JobListing> jobListings = new();
             foreach (var node in jobNodes)
@@ -155,6 +157,7 @@ namespace SeleniumDemo
                 jobListing.JobLink = SeleniumTestsHelpers.ExtractHref(addDomainToJobPaths, node);
                 jobListings.Add(jobListing);
             }
+            //loop over each jobListing, open link and extract info
             foreach (var jobListing in jobListings)
             {
                 Thread.Sleep(delayUserInteraction);
@@ -167,8 +170,8 @@ namespace SeleniumDemo
                 jobListing.ApplyLink = updatedJobListing.ApplyLink;
             }
 
-            var tsvFilePath = SeleniumTestsHelpers.GenerateTsvFileNameForUrl(url);
-            SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, tsvFilePath);
+           // var tsvFilePath = SeleniumTestsHelpers.GenerateFileNameForUrl(url);
+            SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, fileName, "JobListings");
         }
 
         [Category("live")]
@@ -187,13 +190,13 @@ namespace SeleniumDemo
         }
 
         [Category("live")]
-        [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*Joblistings*.tsv")]
-        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern)
+        [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*.tsv", "JobListings")]
+        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern, string subFolder ="")
         {
-            var files = GetFileNames(filePattern);
+            var files = GetFileNames(filePattern, subFolder);
             if (files != null)
             {
-                WriteToExcelSheetUsingClosedXML(fileName, files);
+                SeleniumTestsHelpers.CreateExcelFromExistingFiles(fileName, files);
             }
             else
             {
@@ -201,19 +204,19 @@ namespace SeleniumDemo
             }
         }
 
-
         [OneTimeTearDown]
         public void TearDown()
         {
             driver.Quit();
             driver.Dispose();
         }
-        private string[]? GetFileNames(string searchPatternForFiles)
+        private string[]? GetFileNames(string searchPatternForFiles, string subPath)
         {
-            var files = Directory.GetFiles(Directory.GetCurrentDirectory(), searchPatternForFiles);
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), subPath);
+            var files = Directory.GetFiles(folder, searchPatternForFiles);
             if (files.Length == 0)
             {
-                TestContext.WriteLine("No TSV files found.");
+                TestContext.WriteLine("No files found.");
                 return null;
             }
             return files;
@@ -254,36 +257,6 @@ namespace SeleniumDemo
         private static void WaitForDocumentReady(WebDriverWait wait)
         {
             bool IsDocumentReady = wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
-        }
-
-        /// <summary>
-        /// Grabas existing TSV files and writes them to an Excel sheet using ClosedXML.
-        /// </summary>
-        /// <param name="fileName">Filename of excelsheet</param>
-        /// <param name="searchPatternForFiles"></param>
-        private void WriteToExcelSheetUsingClosedXML(string fileName, string[] files)
-        {
-            using (var workbook = new XLWorkbook())
-            {
-                foreach (var tsvFile in files)
-                {
-                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(tsvFile);
-                    fileNameWithoutExtension = fileNameWithoutExtension.Substring(0, 30);
-                    var worksheet = workbook.Worksheets.Add(fileNameWithoutExtension);
-                    int row = 1;
-
-                    foreach (var line in File.ReadLines(tsvFile))
-                    {
-                        var columns = line.Split('\t');
-                        for (int col = 0; col < columns.Length; col++)
-                        {
-                            worksheet.Cell(row, col + 1).Value = columns[col];
-                        }
-                        row++;
-                    }
-                }
-                workbook.SaveAs(fileName);
-            }
         }
 
         private bool BlockedInfoOnPage()

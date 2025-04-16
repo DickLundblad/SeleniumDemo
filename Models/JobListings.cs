@@ -1,13 +1,19 @@
 ﻿
+using DocumentFormat.OpenXml.Math;
+
 namespace SeleniumDemo.Models
 {
     public class JobListings
     {
         private List<JobListing> jobListings;
+        private string startPage;
+        private string name;
 
-        public JobListings()
+        public JobListings(string name, string startPage="")
         {
             jobListings = new List<JobListing>();
+            this.Name = name;
+            this.StartPage = startPage;
         }
 
         public List<JobListing> JobListingsList
@@ -15,6 +21,9 @@ namespace SeleniumDemo.Models
             get { return jobListings; }
             set { jobListings = value; }
         }
+
+        public string StartPage { get => startPage; set => startPage = value; }
+        public string Name { get => name; set => name = value; }
 
         public bool InsertOrUpdate(JobListing job)
         {
