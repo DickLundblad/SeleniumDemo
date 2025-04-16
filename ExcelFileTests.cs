@@ -26,7 +26,7 @@ namespace SeleniumDemo
             var job1 = new JobListing() { JobLink = "https://www.linkedin.com/jobs/collections/it-services-and-it-consulting/?currentJobId=4170820433" };
             jobListings1.InsertOrUpdate(job1);
             JobListings jobListings2 = new JobListings(fileNameJobListing2);
-            var job2 = new JobListing() { JobLink = "https://www.linkedin.com/jobs/collections/it-services-and-it-consulting" };
+            var job2 = new JobListing() { JobLink = "https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest" };
             jobListings2.InsertOrUpdate(job2);
 
             
