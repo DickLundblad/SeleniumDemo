@@ -111,7 +111,7 @@ namespace SeleniumDemo
             {
                 fileNameOverview += ".xlsx";
             }
-            return SeleniumTestsHelpers.LoadListingsOverviewFromFile(fileNameOverview);
+            return SeleniumTestsHelpers.LoadListingsOverviewFromExcelFile(fileNameOverview);
         }
 
 

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace SeleniumDemo
 {
-    public partial class SeleniumTests
+    public partial class LivePagesTests
     {
         private string ExtractContactInfo()
         {

@@ -6,7 +6,7 @@ using SeleniumDemo.Models;
 
 namespace SeleniumDemo
 {
-    public partial class SeleniumTests
+    public partial class LivePagesTests
     {
         private ChromeDriver driver; // Changed type from IWebDriver to ChromeDriver for improved performance
         private ChatGPTService? _chatService;
@@ -172,6 +172,25 @@ namespace SeleniumDemo
 
            // var tsvFilePath = SeleniumTestsHelpers.GenerateFileNameForUrl(url);
             SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, fileName, "JobListings");
+        }
+
+        [Category("live")]
+        [TestCase("")]
+        public void ParseJobLinksAndUpdateJobListingsInExistingFile(string fileName)
+        {
+            // load JobListings from file
+            // loop over each jobListing, open link and extract info
+
+            // save to file
+        }
+
+        [Category("live")]
+        [TestCase("", "")]
+        public void AddOrUpdateJobListingsToExistingFile(string startUrl, string fileName)
+        {
+            // ValidateThatJoblinksCanBeRetrievedAndParsed
+
+            // InsertOrUpdateJobListings On existing file
         }
 
         [Category("live")]

@@ -37,15 +37,6 @@ namespace SeleniumDemo
                         .Replace("(", "_");
         }
 
-        public static string GenerateFileNameForUrl(string url)
-        {
-            var fileName = RemoveInvalidChars(SeleniumTestsHelpers.ReplaceBadCharactersInFilePath(url));
-            var truncatedFileName = fileName.Substring(7, 36);
-            var tsvFilePath = $"JL_{truncatedFileName}";
-
-            return tsvFilePath;
-        }
-
         public static string? ExtractHref(string addDomainToJobPaths, IWebElement jobNode)
         {
             string? jobLink = string.Empty;
@@ -476,7 +467,7 @@ namespace SeleniumDemo
             }
         }
 
-        internal static ListingsOverview LoadListingsOverviewFromFile(string fileNameOverview)
+        internal static ListingsOverview LoadListingsOverviewFromExcelFile(string fileNameOverview)
         {
             var listingsOverview = new ListingsOverview();
 
