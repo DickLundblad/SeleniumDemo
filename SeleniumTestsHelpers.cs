@@ -187,7 +187,7 @@ namespace SeleniumDemo
             }
         }
 
-        public static JobListings LoadJobListingsFromFile(string fileName)
+        public static JobListings LoadJobListingsFromFile(string fileName, string subFolder ="")
         {
             var nameWithoutFileExtension = Path.GetFileNameWithoutExtension(fileName);
             var jobListings = new JobListings(nameWithoutFileExtension);
@@ -202,6 +202,12 @@ namespace SeleniumDemo
             {
                 fileName += RESULT_FILE_ENDING;
             }
+
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                fileName = Path.Combine(subFolder, fileName);
+            }
+
 
             using (var reader = new StreamReader(fileName))
             using (var csv = new CsvReader(reader, config))

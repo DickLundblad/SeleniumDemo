@@ -103,27 +103,10 @@ namespace SeleniumDemo
         [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "")]
         public void ValidateThatJoblinksCanBeRetrievedFromStartPages(string url, string selectorXPathForJobEntry, string addDomainToJobPaths = "", int delayUserInteraction = 0)
         {
-            ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
-            driver.SwitchTo().Window(driver.WindowHandles.Last());
-            driver.Navigate().GoToUrl(url);
-
-            AcceptPopups();
-            Thread.Sleep(delayUserInteraction);
-            Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on page: {url}");
-
-            var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
-
-            Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
-            TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
-            List<JobListing> jobListings = new();
-            foreach (var node in jobNodes)
+            List<JobListing> jobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction);
+            foreach (var job in jobListings)
             {
-                var jobListing = new JobListing
-                {
-                    JobLink = SeleniumTestsHelpers.ExtractHref(addDomainToJobPaths, node) ?? string.Empty
-                };
-                jobListings.Add(jobListing);
-                Assert.That(jobListing.JobLink, Is.Not.Empty, "Job link is empty");
+                Assert.That(job.JobLink, Is.Not.Empty, "Job link is empty");
             }
         }
 
@@ -136,27 +119,7 @@ namespace SeleniumDemo
         [TestCase("https://www.linkedin.com/jobs/search/?currentJobId=4205944474&geoId=105117694&keywords=software&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true", "//div[@data-job-id]", "linkedin_com_software", "")]
         public void ValidateThatJoblinksCanBeRetrievedAndParsed(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0)
         {
-            ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
-            driver.SwitchTo().Window(driver.WindowHandles.Last());
-            driver.Navigate().GoToUrl(url);
-
-            AcceptPopups();
-            Thread.Sleep(delayUserInteraction);
-            var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
-            if (jobNodes.Count == 0)
-            {
-                Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on start page {url}");
-            }
-            Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
-            
-            TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
-            List<JobListing> jobListings = new();
-            foreach (var node in jobNodes)
-            {
-                var jobListing = new JobListing();
-                jobListing.JobLink = SeleniumTestsHelpers.ExtractHref(addDomainToJobPaths, node);
-                jobListings.Add(jobListing);
-            }
+            List<JobListing> jobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction);
             //loop over each jobListing, open link and extract info
             foreach (var jobListing in jobListings)
             {
@@ -170,18 +133,57 @@ namespace SeleniumDemo
                 jobListing.ApplyLink = updatedJobListing.ApplyLink;
             }
 
-           // var tsvFilePath = SeleniumTestsHelpers.GenerateFileNameForUrl(url);
             SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, fileName, "JobListings");
         }
 
+        private List<JobListing> OpenAndExtractJobListings(string url, string selectorXPathForJobEntry, string addDomainToJobPaths, int delayUserInteraction)
+        {
+            ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
+            driver.SwitchTo().Window(driver.WindowHandles.Last());
+            driver.Navigate().GoToUrl(url);
+
+            AcceptPopups();
+            Thread.Sleep(delayUserInteraction);
+            var jobNodes = driver.FindElements(By.XPath(selectorXPathForJobEntry));
+            if (jobNodes.Count == 0)
+            {
+                Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on start page {url}");
+            }
+            Assert.That(jobNodes.Count, Is.GreaterThan(0), "No job entries found on the page.");
+
+            TestContext.WriteLine($"Number of job entries found: {jobNodes.Count}");
+            List<JobListing> jobListings = new();
+            foreach (var node in jobNodes)
+            {
+                var jobListing = new JobListing();
+                jobListing.JobLink = SeleniumTestsHelpers.ExtractHref(addDomainToJobPaths, node);
+                jobListings.Add(jobListing);
+            }
+
+            return jobListings;
+        }
+
         [Category("live")]
-        [TestCase("")]
-        public void ParseJobLinksAndUpdateJobListingsInExistingFile(string fileName)
+        [TestCase("se_indeed_empty_what_where", 3000)]
+        public void ParseJobLinksAndUpdateJobListingsInExistingFile(string fileName, int delayUserInteraction = 0)
         {
             // load JobListings from file
-            // loop over each jobListing, open link and extract info
+            var subFolder = "JobListings";
+           
+            JobListings jobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, subFolder);
+            foreach (var jobListing in jobListings.JobListingsList)
+            {
+                Thread.Sleep(delayUserInteraction);
+                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
+                jobListing.Title = updatedJobListing.Title;
+                jobListing.Published = updatedJobListing.Published;
+                jobListing.EndDate = updatedJobListing.EndDate;
+                jobListing.ContactInformation = updatedJobListing.ContactInformation;
+                jobListing.Description = updatedJobListing.Description;
+                jobListing.ApplyLink = updatedJobListing.ApplyLink;
+            }
 
-            // save to file
+            //SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings.JobListingsList, fileName, "JobListings");
         }
 
         [Category("live")]
