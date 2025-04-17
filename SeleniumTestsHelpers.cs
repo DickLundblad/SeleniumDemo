@@ -92,16 +92,16 @@ namespace SeleniumDemo
             throw new StaleElementReferenceException($"Element is stale after {retryCount} retries");
         }
 
-        public static void WriteListOfJobsToFile(List<JobListing> results, string tsvFilePath, string folder="")
+        public static void WriteListOfJobsToFile(List<JobListing> results, string filePath, string folder="")
         {
-            if (!tsvFilePath.EndsWith(RESULT_FILE_ENDING))
+            if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {
-                tsvFilePath += RESULT_FILE_ENDING;
+                filePath += RESULT_FILE_ENDING;
             }
             if (!string.IsNullOrEmpty(folder))
             {
                 EnsureFolderExists(folder);
-                tsvFilePath = Path.Combine(folder, tsvFilePath);
+                filePath = Path.Combine(folder, filePath);
             }
 
 
@@ -115,7 +115,7 @@ namespace SeleniumDemo
                 Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
             };
 
-            using (var writer = new StreamWriter(tsvFilePath))
+            using (var writer = new StreamWriter(filePath))
             using (var csv = new CsvWriter(writer, config))
             {
                 csv.WriteHeader<JobListing>();
@@ -137,8 +137,8 @@ namespace SeleniumDemo
                 }
             }
 
-            TestContext.WriteLine($"TSV file created: {tsvFilePath}");
-            using (var reader = new StreamReader(tsvFilePath))
+            TestContext.WriteLine($"TSV file created: {filePath}");
+            using (var reader = new StreamReader(filePath))
             using (var csvR = new CsvReader(reader, config))
             {
                 var records = csvR.GetRecords<JobListing>().ToList();
@@ -147,11 +147,11 @@ namespace SeleniumDemo
             }
         }
 
-        public static void WriteToFile(JobListings results, string tsvFilePath)
+        public static void WriteToFile(JobListings results, string filePath)
         {
-            if (!tsvFilePath.EndsWith(RESULT_FILE_ENDING))
+            if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {   
-                tsvFilePath += RESULT_FILE_ENDING;
+                filePath += RESULT_FILE_ENDING;
             }
             // Log the job listings
             foreach (var jobListing in results.JobListingsList)
@@ -164,7 +164,7 @@ namespace SeleniumDemo
                 Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
             };
 
-            using (var writer = new StreamWriter(tsvFilePath))
+            using (var writer = new StreamWriter(filePath))
             using (var csv = new CsvWriter(writer, config))
             {
                 csv.WriteHeader<JobListing>();
@@ -186,13 +186,13 @@ namespace SeleniumDemo
                 }
             }
 
-            TestContext.WriteLine($"TSV file created: {tsvFilePath}");
-            using (var reader = new StreamReader(tsvFilePath))
+            TestContext.WriteLine($"file created: {filePath}");
+            using (var reader = new StreamReader(filePath))
             using (var csvR = new CsvReader(reader, config))
             {
                 var records = csvR.GetRecords<JobListing>().ToList();
-                Assert.That(records.Count, Is.GreaterThan(0), "The TSV file does not contain any job listings.");
-                TestContext.WriteLine($"Validated that the TSV file contains {records.Count} job listings.");
+                Assert.That(records.Count, Is.GreaterThan(0), "The  file does not contain any job listings.");
+                TestContext.WriteLine($"Validated that the file contains {records.Count} job listings.");
             }
         }
 
@@ -508,7 +508,7 @@ namespace SeleniumDemo
 
             return listingsOverview;
         }
-        public static void CreateExcelFromTsvFiles(string excelFileName, string[] tsvFiles)
+        public static void CreateExcelFromResultFiles(string excelFileName, string[] tsvFiles)
         {
             using (var workbook = new XLWorkbook())
             {
