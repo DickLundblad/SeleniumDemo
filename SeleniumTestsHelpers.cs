@@ -1,16 +1,18 @@
 ﻿using ClosedXML.Excel;
 using CsvHelper;
 using CsvHelper.Configuration;
-using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using OpenQA.Selenium;
 using SeleniumDemo.Models;
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SeleniumDemo
 {
     public static class SeleniumTestsHelpers
     {
+        const string RESULT_FILE_ENDING = ".csv";
+        const char RESULT_FILE_COLUMN_SEPARATOR = ';';
         public static string RemoveInvalidChars(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
@@ -92,9 +94,9 @@ namespace SeleniumDemo
 
         public static void WriteListOfJobsToFile(List<JobListing> results, string tsvFilePath, string folder="")
         {
-            if (!tsvFilePath.EndsWith(".tsv"))
+            if (!tsvFilePath.EndsWith(RESULT_FILE_ENDING))
             {
-                tsvFilePath += ".tsv";
+                tsvFilePath += RESULT_FILE_ENDING;
             }
             if (!string.IsNullOrEmpty(folder))
             {
@@ -110,7 +112,7 @@ namespace SeleniumDemo
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
-                Delimiter = "\t"
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
             };
 
             using (var writer = new StreamWriter(tsvFilePath))
@@ -147,9 +149,9 @@ namespace SeleniumDemo
 
         public static void WriteToFile(JobListings results, string tsvFilePath)
         {
-            if (!tsvFilePath.EndsWith(".tsv"))
-            {
-                tsvFilePath += ".tsv";
+            if (!tsvFilePath.EndsWith(RESULT_FILE_ENDING))
+            {   
+                tsvFilePath += RESULT_FILE_ENDING;
             }
             // Log the job listings
             foreach (var jobListing in results.JobListingsList)
@@ -159,7 +161,7 @@ namespace SeleniumDemo
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
-                Delimiter = "\t"
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
             };
 
             using (var writer = new StreamWriter(tsvFilePath))
@@ -201,13 +203,13 @@ namespace SeleniumDemo
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
-                Delimiter = "\t",
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
                 MissingFieldFound = null, // Ignore missing fields
                 HeaderValidated = null   // Ignore header validation
             };
-            if (! fileName.EndsWith(".tsv"))
+            if (! fileName.EndsWith(RESULT_FILE_ENDING))
             {
-                fileName += ".tsv";
+                fileName += RESULT_FILE_ENDING;
             }
 
             using (var reader = new StreamReader(fileName))
@@ -383,12 +385,15 @@ namespace SeleniumDemo
                     var worksheet = workbook.Worksheets.Add(fileNameWithoutExtension);
                     int row = 1;
 
-                    foreach (var line in File.ReadLines(tsvFile))
-                    {
-                        var columns = line.Split('\t');
+                    foreach (var line in ReadLinesPreservingCellLineBreaks(tsvFile, RESULT_FILE_COLUMN_SEPARATOR))
+                    { 
+                        var columns = line.Split(RESULT_FILE_COLUMN_SEPARATOR);
                         for (int col = 0; col < columns.Length; col++)
                         {
-                            worksheet.Cell(row, col + 1).Value = columns[col];
+                            // Remove quotes and handle newlines
+                            string cellValue = columns[col].Trim('"').Replace("\n", Environment.NewLine);
+                            worksheet.Cell(row, col + 1).Value = cellValue;
+                            worksheet.Cell(row, col + 1).Style.Alignment.WrapText = true;
                         }
                         row++;
                     }
@@ -397,6 +402,44 @@ namespace SeleniumDemo
             }
         }
 
+         private static IEnumerable<string> ReadLinesPreservingCellLineBreaks(string filePath, char delimiter)
+        { 
+                            using (var reader = new StreamReader(filePath))
+                            {
+                                var builder = new StringBuilder();
+                                bool insideQuotedField = false;
+
+                                while (!reader.EndOfStream)
+                                {
+                                    var line = reader.ReadLine();
+                                    if (line == null) continue;
+
+                                    foreach (var ch in line)
+                                    {
+                                        if (ch == '"' && (builder.Length == 0 || builder[^1] != '\\'))
+                                        {
+                                            insideQuotedField = !insideQuotedField;
+                                        }
+                                        builder.Append(ch);
+                                    }
+
+                                    if (!insideQuotedField)
+                                    {
+                                        yield return builder.ToString();
+                                        builder.Clear();
+                                    }
+                                    else
+                                    {
+                                        builder.Append(Environment.NewLine);
+                                    }
+                                }
+
+                                if (builder.Length > 0)
+                                {
+                                    yield return builder.ToString();
+                                }
+                            }
+        }
         internal static void WriteToExcel(ListingsOverview overView, string fileNameJobListing)
         {
             // Create Excel file with ListingsOverview
@@ -406,12 +449,24 @@ namespace SeleniumDemo
                 foreach (var listing in overView.JobListings)
                 {
                     var worksheet = workbook.Worksheets.Add(listing.Name);
-                    worksheet.Cell(1, 1).Value = "Job Link";
+                    worksheet.Cell(1, 1).Value = "Title";
+                    worksheet.Cell(1, 2).Value = "JobLink";
+                    worksheet.Cell(1, 3).Value = "Published";
+                    worksheet.Cell(1, 4).Value = "EndDate";
+                    worksheet.Cell(1, 5).Value = "ContactInformation";
+                    worksheet.Cell(1, 6).Value = "Description";
+                    worksheet.Cell(1, 7).Value = "Description";
 
                     int row = 2;
                     foreach (var job in listing.JobListingsList)
                     {
-                        worksheet.Cell(row, 1).Value = job.JobLink;
+                        worksheet.Cell(row, 1).Value = job.Title;
+                        worksheet.Cell(row, 2).Value = job.JobLink;
+                        worksheet.Cell(row, 3).Value = job.Published;
+                        worksheet.Cell(row, 4).Value = job.EndDate;
+                        worksheet.Cell(row, 5).Value = job.ContactInformation;
+                        worksheet.Cell(row, 6).Value = job.Description;
+                        worksheet.Cell(row, 7).Value = job.Description;
                         row++;
                     }
                 }
@@ -453,5 +508,35 @@ namespace SeleniumDemo
 
             return listingsOverview;
         }
+        public static void CreateExcelFromTsvFiles(string excelFileName, string[] tsvFiles)
+        {
+            using (var workbook = new XLWorkbook())
+            {
+                foreach (var tsvFile in tsvFiles)
+                {
+                    string sheetName = Path.GetFileNameWithoutExtension(tsvFile);
+                    if (sheetName.Length > 31) // Excel sheet name limit
+                    {
+                        sheetName = sheetName.Substring(0, 31);
+                    }
+
+                    var worksheet = workbook.Worksheets.Add(sheetName);
+                    int row = 1;
+
+                    foreach (var line in File.ReadLines(tsvFile))
+                    {
+                        var columns = line.Split(RESULT_FILE_COLUMN_SEPARATOR);
+                        for (int col = 0; col < columns.Length; col++)
+                        {
+                            worksheet.Cell(row, col + 1).Value = columns[col];
+                        }
+                        row++;
+                    }
+                }
+
+                workbook.SaveAs(excelFileName);
+            }
+        }
+
     }
 }

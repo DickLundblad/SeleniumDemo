@@ -46,6 +46,21 @@
             Assert.That(result, Is.EqualTo(expected));
         }
 
+        [Category("live")]
+        [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*.csv", "JobListings")]
+        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern, string subFolder ="")
+        {
+            var files = GetFileNames(filePattern, subFolder);
+            if (files != null)
+            {
+                SeleniumTestsHelpers.CreateExcelFromExistingFiles(fileName, files);
+            }
+            else
+            {
+                TestContext.WriteLine($"No files found with pattern: {filePattern}");
+            }
+        }
+
         public string ReadFileContent(string fileName)
         {
             // Define the file path relative to the project directory
@@ -58,6 +73,18 @@
             string fileContent = File.ReadAllText(filePath);
 
             return fileContent;
+        }
+
+        private string[]? GetFileNames(string searchPatternForFiles, string subPath)
+        {
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), subPath);
+            var files = Directory.GetFiles(folder, searchPatternForFiles);
+            if (files.Length == 0)
+            {
+                TestContext.WriteLine("No files found.");
+                return null;
+            }
+            return files;
         }
     }
 }

@@ -189,20 +189,7 @@ namespace SeleniumDemo
             Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
         }
 
-        [Category("live")]
-        [TestCase("JobListingsExcel_ClosedXml_.xlsx", "*.tsv", "JobListings")]
-        public void ZZ_CreateExcelSheetWithJobListingsUsingClosedXML(string fileName, string filePattern, string subFolder ="")
-        {
-            var files = GetFileNames(filePattern, subFolder);
-            if (files != null)
-            {
-                SeleniumTestsHelpers.CreateExcelFromExistingFiles(fileName, files);
-            }
-            else
-            {
-                TestContext.WriteLine($"No files found with pattern: {filePattern}");
-            }
-        }
+
 
         [OneTimeTearDown]
         public void TearDown()
@@ -210,17 +197,7 @@ namespace SeleniumDemo
             driver.Quit();
             driver.Dispose();
         }
-        private string[]? GetFileNames(string searchPatternForFiles, string subPath)
-        {
-            var folder = Path.Combine(Directory.GetCurrentDirectory(), subPath);
-            var files = Directory.GetFiles(folder, searchPatternForFiles);
-            if (files.Length == 0)
-            {
-                TestContext.WriteLine("No files found.");
-                return null;
-            }
-            return files;
-        }
+
         private JobListing OpenAndParseJobLink(string url, int delayUserInteraction)
         {
             var jobListing = new JobListing();

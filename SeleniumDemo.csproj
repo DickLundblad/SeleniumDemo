@@ -29,10 +29,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="TestData\OfflinePages\AIResponse\ContactInformation\" />
     <Folder Include="TestData\OfflinePages\Body\" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="TestData\OfflinePages\AIResponse\ContactInformation\LinkedIn.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\OfflinePages\Body\JobbSafari_automation-engineer-level-1-cold-mill-ssste-19223651.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
