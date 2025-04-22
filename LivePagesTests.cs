@@ -1,8 +1,8 @@
-using ClosedXML.Excel;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using SeleniumDemo.Models;
+using System;
 
 namespace SeleniumDemo
 {
@@ -14,6 +14,7 @@ namespace SeleniumDemo
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
+            // open Chrome in debug mode
             try
             {
                 // Check if any Chrome instances are already running
@@ -117,7 +118,7 @@ namespace SeleniumDemo
         [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']", "monster_se_mjukvara_skane", "", 2000)]
         [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "linkedin_com_it-services-and-it-consulting", "")]
         [TestCase("https://www.linkedin.com/jobs/search/?currentJobId=4205944474&geoId=105117694&keywords=software&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true", "//div[@data-job-id]", "linkedin_com_software", "")]
-        public void ValidateThatJoblinksCanBeRetrievedAndParsed(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0)
+        public void ValidateThatJoblinksCanBeRetrievedAndParsed_WriteToFIle(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0)
         {
             List<JobListing> jobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction);
             //loop over each jobListing, open link and extract info
@@ -134,6 +135,84 @@ namespace SeleniumDemo
             }
 
             SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, fileName, "JobListings");
+        }
+   
+        
+       [Category("live")]
+       [TestCase("se_indeed_empty_what_where", 3000)]
+       [TestCase("jobbsafari_se_data_och_it_newest")]
+       [TestCase("jobbsafari_se_data_och_it_newest",0,true)]
+       public void ParseJobLinksAndUpdateJobListingsInExistingFile(string fileName, int delayUserInteraction = 0,bool onlyUpdateMissingContactInfo = false)
+        {
+            // load JobListings from file
+            var subFolder = "JobListings";
+           
+            JobListings jobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, subFolder);
+            // select only the lines with empty contactInfo
+            List<JobListing> listToUpdate = jobListings.JobListingsList;
+            if (onlyUpdateMissingContactInfo)
+            { 
+                listToUpdate = jobListings.JobListingsList
+                    .Where(x => x.ContactInformation == null || x.ContactInformation == "")
+                    .ToList();
+            }
+            foreach (var jobListing in listToUpdate)
+            {
+                Thread.Sleep(delayUserInteraction);
+                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
+                jobListing.Title = updatedJobListing.Title;
+                jobListing.Published = updatedJobListing.Published;
+                jobListing.EndDate = updatedJobListing.EndDate;
+                jobListing.ContactInformation = updatedJobListing.ContactInformation;
+                jobListing.Description = updatedJobListing.Description;
+                jobListing.ApplyLink = updatedJobListing.ApplyLink;
+            }
+            if (listToUpdate.Count > 0)
+            { 
+                jobListings.JobListingsList.AddRange(listToUpdate);
+                SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings.JobListingsList, fileName, "JobListings");
+            }
+        }
+
+        [Category("live")]
+        [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "jobbsafari_se_data_och_it_newest", "https://jobbsafari.se")]
+        public void AddOrUpdateJobListingsToExistingFile(string startUrl,string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths, int delayUserInteraction = 0)
+        {
+            var subFolder = "JobListings";
+
+            //Foreach JoblLink found on start URL
+            List<JobListing> jobListingsOnPage = OpenAndExtractJobListings(startUrl, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction);
+            JobListings existingJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, subFolder);
+
+            //loop over each jobListing
+            foreach (var newJob in jobListingsOnPage)
+            { 
+                existingJobListings.InsertOrUpdate(newJob);
+            }
+            SeleniumTestsHelpers.WriteToFile(existingJobListings, fileName, subFolder);
+        }
+
+        [Category("live")]
+        [TestCase("https://jobbsafari.se/jobb/digital-radio-system-designer-sesri-19207406", 0)]
+        [TestCase("https://www.linkedin.com/jobs/view/4194781616/?eBP=BUDGET_EXHAUSTED_JOB&refId=wqmOM1Whbos%2BqR2hax6d%2BQ%3D%3D&trackingId=Y31jWZzmfvJYm7mUln7UBQ%3D%3D&trk=flagship3_job_collections_leaf_page", 0)]
+        [TestCase("https://se.jooble.org/desc/-154934751721925931?ckey=NONE&rgn=-1&pos=1&elckey=3819297206643930044&pageType=20&p=1&jobAge=2608&relb=140&brelb=100&bscr=112&scr=156.8&premImp=1", 0)]
+        [TestCase("https://se.jooble.org/desc/-2750184788513872086?ckey=NONE&rgn=-1&pos=3&elckey=3819297206643930044&pageType=20&p=1&jobAge=766&relb=100&brelb=100&bscr=88.1224&scr=88.1224", 2000)]
+        [TestCase("https://jobbsafari.se/jobb/solution-architect-intralogistics-development-supply-chain-development-siske-19207507", 0)]
+        [TestCase("https://jobbsafari.se/jobb/rd-specialist-till-essentias-protein-solutions-sesmp-19206771", 0)]
+        [TestCase("https://www.monster.se/jobberbjudande/it-tekniker-till-internationellt-f%C3%B6retag-malm%C3%B6-sk%C3%A5ne--24828633-9781-4533-95c8-6dc9c2758f21?sid=755339e0-795d-402e-b468-2e6ca4790ae9&jvo=m.mp.s-svr.1&so=m.s.lh&hidesmr=1", 2000)]
+        public void ValidateThatAJobLinkCanBeOpenedAndParsed(string url, int delayUserInteraction = 0)
+        {
+            var jobListing = OpenAndParseJobLink(url, delayUserInteraction);
+            // JobLink can change if it's a re-direct, but we will keep the original URL
+            Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
+        }
+
+
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+            driver.Quit();
+            driver.Dispose();
         }
 
         private List<JobListing> OpenAndExtractJobListings(string url, string selectorXPathForJobEntry, string addDomainToJobPaths, int delayUserInteraction)
@@ -162,63 +241,7 @@ namespace SeleniumDemo
 
             return jobListings;
         }
-
-        [Category("live")]
-        [TestCase("se_indeed_empty_what_where", 3000)]
-        public void ParseJobLinksAndUpdateJobListingsInExistingFile(string fileName, int delayUserInteraction = 0)
-        {
-            // load JobListings from file
-            var subFolder = "JobListings";
-           
-            JobListings jobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, subFolder);
-            foreach (var jobListing in jobListings.JobListingsList)
-            {
-                Thread.Sleep(delayUserInteraction);
-                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
-                jobListing.Title = updatedJobListing.Title;
-                jobListing.Published = updatedJobListing.Published;
-                jobListing.EndDate = updatedJobListing.EndDate;
-                jobListing.ContactInformation = updatedJobListing.ContactInformation;
-                jobListing.Description = updatedJobListing.Description;
-                jobListing.ApplyLink = updatedJobListing.ApplyLink;
-            }
-
-            //SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings.JobListingsList, fileName, "JobListings");
-        }
-
-        [Category("live")]
-        [TestCase("", "")]
-        public void AddOrUpdateJobListingsToExistingFile(string startUrl, string fileName)
-        {
-            // ValidateThatJoblinksCanBeRetrievedAndParsed
-
-            // InsertOrUpdateJobListings On existing file
-        }
-
-        [Category("live")]
-        [TestCase("https://jobbsafari.se/jobb/digital-radio-system-designer-sesri-19207406", 0)]
-        [TestCase("https://www.linkedin.com/jobs/view/4194781616/?eBP=BUDGET_EXHAUSTED_JOB&refId=wqmOM1Whbos%2BqR2hax6d%2BQ%3D%3D&trackingId=Y31jWZzmfvJYm7mUln7UBQ%3D%3D&trk=flagship3_job_collections_leaf_page", 0)]
-        [TestCase("https://se.jooble.org/desc/-154934751721925931?ckey=NONE&rgn=-1&pos=1&elckey=3819297206643930044&pageType=20&p=1&jobAge=2608&relb=140&brelb=100&bscr=112&scr=156.8&premImp=1", 0)]
-        [TestCase("https://se.jooble.org/desc/-2750184788513872086?ckey=NONE&rgn=-1&pos=3&elckey=3819297206643930044&pageType=20&p=1&jobAge=766&relb=100&brelb=100&bscr=88.1224&scr=88.1224", 2000)]
-        [TestCase("https://jobbsafari.se/jobb/solution-architect-intralogistics-development-supply-chain-development-siske-19207507", 0)]
-        [TestCase("https://jobbsafari.se/jobb/rd-specialist-till-essentias-protein-solutions-sesmp-19206771", 0)]
-        [TestCase("https://www.monster.se/jobberbjudande/it-tekniker-till-internationellt-f%C3%B6retag-malm%C3%B6-sk%C3%A5ne--24828633-9781-4533-95c8-6dc9c2758f21?sid=755339e0-795d-402e-b468-2e6ca4790ae9&jvo=m.mp.s-svr.1&so=m.s.lh&hidesmr=1", 2000)]
-        public void ValidateThatAJobLinkCanBeOpenedAndParsed(string url, int delayUserInteraction = 0)
-        {
-            var jobListing = OpenAndParseJobLink(url, delayUserInteraction);
-            // JobLink can change if it's a re-direct, but we will keep the original URL
-            Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
-        }
-
-
-
-        [OneTimeTearDown]
-        public void TearDown()
-        {
-            driver.Quit();
-            driver.Dispose();
-        }
-
+  
         private JobListing OpenAndParseJobLink(string url, int delayUserInteraction)
         {
             var jobListing = new JobListing();
@@ -248,6 +271,8 @@ namespace SeleniumDemo
                 jobListing.Title = ExtractTitle();
                 jobListing.ContactInformation = ExtractContactInfo();
                 jobListing.Published = ExtractPublishedDate();
+                jobListing.EndDate = ExtractEndDate();
+
             }
             catch (Exception ex)
             {

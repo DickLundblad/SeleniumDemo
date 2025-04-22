@@ -67,6 +67,23 @@ namespace SeleniumDemo
             return response;
         }
 
+        public string ExtractEndDate()
+        {
+            string response = string.Empty;
+            var bodyNode = driver.FindElement(By.XPath("//body"));
+            string prompt = $@"extract end date from this text in the same language as the text: {bodyNode.Text}";
+            response = ChatGPTSearch(prompt);
+
+            // fallback solution using regex
+            if (string.IsNullOrEmpty(response))
+            {
+                response = SeleniumTestsHelpers.ExtractApplyLatestInfo(bodyNode.Text);
+            }
+
+            TestContext.WriteLine($"Extracted End Date: {response}");
+            return response;
+        }
+
         public string ChatGPTSearch(string prompt)
         { 
             string response  = string.Empty;

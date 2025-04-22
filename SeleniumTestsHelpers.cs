@@ -83,16 +83,16 @@ namespace SeleniumDemo
             throw new StaleElementReferenceException($"Element is stale after {retryCount} retries");
         }
 
-        public static void WriteListOfJobsToFile(List<JobListing> results, string filePath, string folder="")
+        public static void WriteListOfJobsToFile(List<JobListing> results, string filePath, string subFolder="")
         {
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {
                 filePath += RESULT_FILE_ENDING;
             }
-            if (!string.IsNullOrEmpty(folder))
+            if (!string.IsNullOrEmpty(subFolder))
             {
-                EnsureFolderExists(folder);
-                filePath = Path.Combine(folder, filePath);
+                EnsureFolderExists(subFolder);
+                filePath = Path.Combine(subFolder, filePath);
             }
 
 
@@ -138,11 +138,16 @@ namespace SeleniumDemo
             }
         }
 
-        public static void WriteToFile(JobListings results, string filePath)
+        public static void WriteToFile(JobListings results, string filePath, string subFolder = "")
         {
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
-            {   
+            {
                 filePath += RESULT_FILE_ENDING;
+            }
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                EnsureFolderExists(subFolder);
+                filePath = Path.Combine(subFolder, filePath);
             }
             // Log the job listings
             foreach (var jobListing in results.JobListingsList)
@@ -277,6 +282,18 @@ namespace SeleniumDemo
             return res;
         }
 
+         public static string ExtractApplyLatestInfo(string html)
+        {
+            string swedishPattern =  @"ApplyLatest\s*(\d{4}-\d{2}-\d{2})";
+            string englishPattern =  @"Ansök senast\s*(\d{4}-\d{2}-\d{2})";
+            var res = ExtractTextUsingRegexp(html, swedishPattern);
+            if (res == "")
+            {
+                res = ExtractTextUsingRegexp(html, englishPattern);
+            }
+
+            return res;
+        }
          public static string ExtractPublishedInfo(string html)
         {
             string swedishPattern =  @"Publicerad\s+(\d{4}-\d{2}-\d{2})";
