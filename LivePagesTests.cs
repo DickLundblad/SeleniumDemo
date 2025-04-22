@@ -372,13 +372,14 @@ namespace SeleniumDemo
                         // Wait for the button to be clickable using a lambda expression
                         IWebElement seeMoreButton = wait.Until(driver =>
                             driver.FindElement(By.CssSelector("button[aria-label='Click to see more description']")));
+                        
+                        Console.WriteLine($"Found button area, Displayed: {seeMoreButton.Displayed}, Enabled: {seeMoreButton.Enabled}");
 
                         // Scroll into view if needed
                         ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", seeMoreButton);
 
-                        // Click the button
-                        seeMoreButton.Click();
-                        Console.WriteLine($"Clicked see more button");
+                        var res = ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", seeMoreButton);
+                        Console.WriteLine($"Execute script for click, res: {res}");
                     }
                     catch (NoSuchElementException ex)
                     {
