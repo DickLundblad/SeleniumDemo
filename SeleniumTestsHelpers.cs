@@ -37,7 +37,7 @@ namespace SeleniumDemo
                         .Replace("(", "_");
         }
 
-        public static string? ExtractHref(string addDomainToJobPaths, IWebElement jobNode)
+        public static string? ExtractHref(string addDomainToJobPaths, IWebElement jobNode, bool removeParams = true)
         {
             string? jobLink = string.Empty;
             try
@@ -63,6 +63,11 @@ namespace SeleniumDemo
                 TestContext.WriteLine($"Could not GetAttribute(\"href\") for {ex.InnerException}");
                 throw;
             }
+            if (removeParams)
+            {
+                var uri = new Uri(jobLink);
+                jobLink = $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}";
+            }
             return jobLink;
         }
 
@@ -81,6 +86,14 @@ namespace SeleniumDemo
                 }
             }
             throw new StaleElementReferenceException($"Element is stale after {retryCount} retries");
+        }
+
+        public static List<JobListing> MergeJobListings(List<JobListing> newList, List<JobListing> existingList)
+        {
+            return newList
+                .Where(newJob => !existingList.Any(existingJob => existingJob.JobLink == newJob.JobLink))
+                .Concat(existingList)
+                .ToList();
         }
 
         public static void WriteListOfJobsToFile(List<JobListing> results, string filePath, string subFolder="")
@@ -212,20 +225,25 @@ namespace SeleniumDemo
             {
                 fileName = Path.Combine(subFolder, fileName);
             }
-
+            if (File.Exists(fileName))
+            { 
 
             using (var reader = new StreamReader(fileName))
-            using (var csv = new CsvReader(reader, config))
+                using (var csv = new CsvReader(reader, config))
+                {
+                    try
+                    {
+                        jobListings.JobListingsList = csv.GetRecords<JobListing>().ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        TestContext.WriteLine($"Error reading file {fileName}: {ex.Message}");
+                        throw;
+                    }
+                }
+            }else
             {
-                try
-                {
-                    jobListings.JobListingsList = csv.GetRecords<JobListing>().ToList();
-                }
-                catch (Exception ex)
-                {
-                    TestContext.WriteLine($"Error reading file {fileName}: {ex.Message}");
-                    throw;
-                }
+                TestContext.WriteLine($"File not found: {fileName}");
             }
 
             TestContext.WriteLine($"Loaded {jobListings.JobListingsList.Count} job listings from file: {fileName}");

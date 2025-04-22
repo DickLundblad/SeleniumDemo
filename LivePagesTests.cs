@@ -111,16 +111,28 @@ namespace SeleniumDemo
             }
         }
 
+        /// <summary>
+        /// Open start page
+        /// Extract URLs from the page
+        /// Loop over URL and extract Job information
+        /// Open any existing result file
+        /// Merge results with existing file
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="selectorXPathForJobEntry"></param>
+        /// <param name="fileName"></param>
+        /// <param name="addDomainToJobPaths"></param>
+        /// <param name="delayUserInteraction"></param>
         [Category("live")]
         [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "jobbsafari_se_data_och_it_newest", "https://jobbsafari.se")]
-        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]", "se_indeed_empty_what_where", "")]
+        [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]", "se_indeed_empty_what_where", "", 0,false)]
         [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]","se_jooble_org", "", 2000)]
         [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']", "monster_se_mjukvara_skane", "", 2000)]
         [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "linkedin_com_it-services-and-it-consulting", "")]
         [TestCase("https://www.linkedin.com/jobs/search/?currentJobId=4205944474&geoId=105117694&keywords=software&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true", "//div[@data-job-id]", "linkedin_com_software", "")]
-        public void ValidateThatJoblinksCanBeRetrievedAndParsed_WriteToFIle(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0)
+        public void ValidateThatJoblinksCanBeRetrievedAndParsed_WriteToFile(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true)
         {
-            List<JobListing> jobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction);
+            List<JobListing> jobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction, removeParams);
             //loop over each jobListing, open link and extract info
             foreach (var jobListing in jobListings)
             {
@@ -133,11 +145,50 @@ namespace SeleniumDemo
                 jobListing.Description = updatedJobListing.Description;
                 jobListing.ApplyLink = updatedJobListing.ApplyLink;
             }
-
-            SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, fileName, "JobListings");
+            
+            var existingJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
+            var mergedList = SeleniumTestsHelpers.MergeJobListings(jobListings, existingJobListings.JobListingsList);
+            SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
+            // overwrites any existing files
+            //SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, fileName, "JobListings");
         }
-   
-        
+
+
+
+        /// <summary>
+        /// Add or update job listings to an existing file.
+        /// The joblisting items will only contain a JobLink
+        /// </summary>
+        /// <param name="startUrl"></param>
+        /// <param name="selectorXPathForJobEntry"></param>
+        /// <param name="fileName"></param>
+        /// <param name="addDomainToJobPaths"></param>
+        /// <param name="delayUserInteraction"></param>
+        [Category("live")]
+        [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "linkedin_com_it-services-and-it-consulting", "")]
+        [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "jobbsafari_se_data_och_it_newest", "https://jobbsafari.se")]
+        public void AddOrUpdateJobListingsToExistingFile(string startUrl,string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths, int delayUserInteraction = 0)
+        {
+            var subFolder = "JobListings";
+
+            //Foreach JoblLink found on start URL
+            List<JobListing> jobListingsOnPage = OpenAndExtractJobListings(startUrl, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction);
+            JobListings existingJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, subFolder);
+
+            //loop over each jobListing and insert the jobListing
+            foreach (var newJob in jobListingsOnPage)
+            { 
+                existingJobListings.InsertOrUpdate(newJob);
+            }
+            SeleniumTestsHelpers.WriteToFile(existingJobListings, fileName, subFolder);
+        }
+
+       /// <summary>
+       /// Open a result file, parse the job links and update the job listings in the file.
+       /// </summary>
+       /// <param name="fileName"></param>
+       /// <param name="delayUserInteraction"></param>
+       /// <param name="onlyUpdateMissingContactInfo"></param>
        [Category("live")]
        [TestCase("se_indeed_empty_what_where", 3000)]
        [TestCase("jobbsafari_se_data_och_it_newest")]
@@ -175,26 +226,9 @@ namespace SeleniumDemo
         }
 
         [Category("live")]
-        [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]", "jobbsafari_se_data_och_it_newest", "https://jobbsafari.se")]
-        public void AddOrUpdateJobListingsToExistingFile(string startUrl,string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths, int delayUserInteraction = 0)
-        {
-            var subFolder = "JobListings";
-
-            //Foreach JoblLink found on start URL
-            List<JobListing> jobListingsOnPage = OpenAndExtractJobListings(startUrl, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction);
-            JobListings existingJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, subFolder);
-
-            //loop over each jobListing
-            foreach (var newJob in jobListingsOnPage)
-            { 
-                existingJobListings.InsertOrUpdate(newJob);
-            }
-            SeleniumTestsHelpers.WriteToFile(existingJobListings, fileName, subFolder);
-        }
-
-        [Category("live")]
         [TestCase("https://jobbsafari.se/jobb/digital-radio-system-designer-sesri-19207406", 0)]
         [TestCase("https://www.linkedin.com/jobs/view/4194781616/?eBP=BUDGET_EXHAUSTED_JOB&refId=wqmOM1Whbos%2BqR2hax6d%2BQ%3D%3D&trackingId=Y31jWZzmfvJYm7mUln7UBQ%3D%3D&trk=flagship3_job_collections_leaf_page", 0)]
+        [TestCase("https://www.linkedin.com/jobs/view/4204957407/?trk=flagship3_search_srp_jobs", 0)]
         [TestCase("https://se.jooble.org/desc/-154934751721925931?ckey=NONE&rgn=-1&pos=1&elckey=3819297206643930044&pageType=20&p=1&jobAge=2608&relb=140&brelb=100&bscr=112&scr=156.8&premImp=1", 0)]
         [TestCase("https://se.jooble.org/desc/-2750184788513872086?ckey=NONE&rgn=-1&pos=3&elckey=3819297206643930044&pageType=20&p=1&jobAge=766&relb=100&brelb=100&bscr=88.1224&scr=88.1224", 2000)]
         [TestCase("https://jobbsafari.se/jobb/solution-architect-intralogistics-development-supply-chain-development-siske-19207507", 0)]
@@ -215,7 +249,7 @@ namespace SeleniumDemo
             driver.Dispose();
         }
 
-        private List<JobListing> OpenAndExtractJobListings(string url, string selectorXPathForJobEntry, string addDomainToJobPaths, int delayUserInteraction)
+        private List<JobListing> OpenAndExtractJobListings(string url, string selectorXPathForJobEntry, string addDomainToJobPaths, int delayUserInteraction, bool removeParams = true)
         {
             ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
             driver.SwitchTo().Window(driver.WindowHandles.Last());
@@ -235,7 +269,7 @@ namespace SeleniumDemo
             foreach (var node in jobNodes)
             {
                 var jobListing = new JobListing();
-                jobListing.JobLink = SeleniumTestsHelpers.ExtractHref(addDomainToJobPaths, node);
+                jobListing.JobLink = SeleniumTestsHelpers.ExtractHref(addDomainToJobPaths, node, removeParams);
                 jobListings.Add(jobListing);
             }
 
@@ -376,10 +410,11 @@ namespace SeleniumDemo
                         Console.WriteLine($"Found button area, Displayed: {seeMoreButton.Displayed}, Enabled: {seeMoreButton.Enabled}");
 
                         // Scroll into view if needed
-                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", seeMoreButton);
+                        var statusScroll =((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", seeMoreButton);
+                        Console.WriteLine($"ExecuteScript for scroll into: {seeMoreButton.Displayed}, Enabled: {seeMoreButton.Enabled}, status scroll {statusScroll}");
 
-                        var res = ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", seeMoreButton);
-                        Console.WriteLine($"Execute script for click, res: {res}");
+                        var statusClick = ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", seeMoreButton);
+                        Console.WriteLine($"Execute script for click, status click: {statusClick}");
                     }
                     catch (NoSuchElementException ex)
                     {
