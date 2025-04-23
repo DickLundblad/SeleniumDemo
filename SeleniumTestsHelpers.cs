@@ -88,6 +88,12 @@ namespace SeleniumDemo
             throw new StaleElementReferenceException($"Element is stale after {retryCount} retries");
         }
 
+        /// <summary>
+        /// Ignore lines where JobLink are the same, merge the rest of the lines
+        /// </summary>
+        /// <param name="newList"></param>
+        /// <param name="existingList"></param>
+        /// <returns></returns>
         public static List<JobListing> MergeJobListings(List<JobListing> newList, List<JobListing> existingList)
         {
             return newList

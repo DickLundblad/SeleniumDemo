@@ -29,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="API\" />
     <Folder Include="TestData\OfflinePages\AIResponse\ContactInformation\" />
     <Folder Include="TestData\OfflinePages\Body\" />
   </ItemGroup>
