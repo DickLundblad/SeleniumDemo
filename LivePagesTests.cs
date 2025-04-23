@@ -91,8 +91,6 @@ namespace SeleniumDemo
             var existingJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
             var mergedList = SeleniumTestsHelpers.MergeJobListings(jobListings, existingJobListings.JobListingsList);
             SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
-            // overwrites any existing files
-            //SeleniumTestsHelpers.WriteListOfJobsToFile(jobListings, fileName, "JobListings");
         }
 
 

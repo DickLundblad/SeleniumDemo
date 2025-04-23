@@ -61,7 +61,7 @@ public class JobListingsApi
        driver.Dispose();
     }
 
-    public string ExtractTitle()
+    private string ExtractTitle()
     {
         string response = string.Empty;
         var bodyNode = _driver.FindElement(By.XPath("//body"));
@@ -85,7 +85,7 @@ public class JobListingsApi
         return response;
     }
 
-   public string ExtractPublishedDate()
+   private string ExtractPublishedDate()
     {
         string response = string.Empty;
         var bodyNode = _driver.FindElement(By.XPath("//body"));
@@ -102,7 +102,7 @@ public class JobListingsApi
         return response;
     }
 
-   public string ExtractEndDate()
+   private string ExtractEndDate()
     {
         string response = string.Empty;
         var bodyNode = _driver.FindElement(By.XPath("//body"));
@@ -178,7 +178,7 @@ public class JobListingsApi
         return jobListing;
     }
 
-    private void ShowMore()
+   private void ShowMore()
     {
         try
         {
@@ -220,12 +220,12 @@ public class JobListingsApi
         }
     }
 
-    private static void WaitForDocumentReady(WebDriverWait wait)
+   private static void WaitForDocumentReady(WebDriverWait wait)
     {
         bool IsDocumentReady = wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
     }
 
-    public List<JobListing> OpenAndExtractJobListings(string url, string selectorXPathForJobEntry, string addDomainToJobPaths, int delayUserInteraction, bool removeParams = true)
+   public List<JobListing> OpenAndExtractJobListings(string url, string selectorXPathForJobEntry, string addDomainToJobPaths, int delayUserInteraction, bool removeParams = true)
     {
         ((IJavaScriptExecutor)_driver).ExecuteScript("window.open();");
         _driver.SwitchTo().Window(_driver.WindowHandles.Last());
@@ -250,7 +250,7 @@ public class JobListingsApi
 
         return jobListings;
     }
-    private void LoadEnvironmentVariables()
+   private void LoadEnvironmentVariables()
     {
         var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
         if (File.Exists(envFilePath))
@@ -273,7 +273,7 @@ public class JobListingsApi
             TestContext.WriteLine(".env file not found.");
         }
     }
-    public void AcceptPopups()
+   public void AcceptPopups()
     {
         try
         {
@@ -300,7 +300,7 @@ public class JobListingsApi
         }
     }
 
-    public bool BlockedInfoOnPage()
+   public bool BlockedInfoOnPage()
     {
         var wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(10));
         TestContext.WriteLine($"BlockedInfoOnPage():");
@@ -345,7 +345,7 @@ public class JobListingsApi
         return false;
     }
 
-    private string GetElementTextOnCurrentPage(string xPath)
+   private string GetElementTextOnCurrentPage(string xPath)
     {
         try
         {
