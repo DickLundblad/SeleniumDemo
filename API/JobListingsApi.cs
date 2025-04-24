@@ -159,7 +159,11 @@ public class JobListingsApi
             {
                 TestContext.WriteLine($"Error during WaitForDocumentReady() : {ex.Message}");
             }
-            Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on jobLink page: {url}");
+            if(BlockedInfoOnPage())
+            {
+                TestContext.WriteLine($"Blocked on jobLink page: {url}");
+                return jobListing;
+            }
             if (url.Contains("linkedin"))
             { 
                 ShowMore();
