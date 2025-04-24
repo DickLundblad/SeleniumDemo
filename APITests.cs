@@ -21,7 +21,7 @@ namespace SeleniumDemo
         [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]","se_jooble_org", "", 2000)]
         [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']", "monster_se_mjukvara_skane", "", 2000)]
         [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]", "linkedin_com_it-services-and-it-consulting", "")]
-        [TestCase("https://www.linkedin.com/jobs/search/?currentJobId=4205944474&geoId=105117694&keywords=software", "//div[@data-job-id]", "linkedin_com_software", "")]
+        [TestCase("https://www.linkedin.com/jobs/search/?keywords=software", "//div[@data-job-id]", "linkedin_com_software", "")]
         public void CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true, string folderPathToResultFiles = "")
         {
             _api.CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(url, selectorXPathForJobEntry, fileName, addDomainToJobPaths, delayUserInteraction, removeParams);
