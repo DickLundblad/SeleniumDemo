@@ -102,6 +102,13 @@ namespace SeleniumDemo
                 .ToList();
         }
 
+        public static List<JobListing> ExtractNewJobListings(List<JobListing> newList, List<JobListing> existingList)
+        {
+            return newList
+                .Where(newJob => !existingList.Any(existingJob => existingJob.JobLink == newJob.JobLink))
+                .ToList();
+        }
+
         public static void WriteListOfJobsToFile(List<JobListing> results, string filePath, string subFolder="")
         {
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
@@ -152,8 +159,8 @@ namespace SeleniumDemo
             using (var csvR = new CsvReader(reader, config))
             {
                 var records = csvR.GetRecords<JobListing>().ToList();
-                Assert.That(records.Count, Is.GreaterThan(0), "The TSV file does not contain any job listings.");
-                TestContext.WriteLine($"Validated that the TSV file contains {records.Count} job listings.");
+                Assert.That(records.Count, Is.GreaterThan(0), "The  file does not contain any job listings.");
+                TestContext.WriteLine($"Validated that the file contains {records.Count} job listings.");
             }
         }
 

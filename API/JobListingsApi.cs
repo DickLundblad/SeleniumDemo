@@ -31,23 +31,36 @@ public class JobListingsApi
 
     public void CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true)
     {
-        List<JobListing> jobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction, removeParams);
-        //loop over each jobListing, open link and extract info
-        foreach (var jobListing in jobListings)
+        List<JobListing> liveJobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction, removeParams);
+        var savedJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
+        var newJobListings = SeleniumTestsHelpers.ExtractNewJobListings(liveJobListings, savedJobListings.JobListingsList);
+
+        
+        if (newJobListings.Count >0)
         {
-            Thread.Sleep(delayUserInteraction);
-            var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
-            jobListing.Title = updatedJobListing.Title;
-            jobListing.Published = updatedJobListing.Published;
-            jobListing.EndDate = updatedJobListing.EndDate;
-            jobListing.ContactInformation = updatedJobListing.ContactInformation;
-            jobListing.Description = updatedJobListing.Description;
-            jobListing.ApplyLink = updatedJobListing.ApplyLink;
+            TestContext.WriteLine($"Number of new job listings to open and parse: {newJobListings.Count}");
+            foreach (var jobListing in newJobListings)
+            {
+                Thread.Sleep(delayUserInteraction);
+                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
+                jobListing.Title = updatedJobListing.Title;
+                jobListing.Published = updatedJobListing.Published;
+                jobListing.EndDate = updatedJobListing.EndDate;
+                jobListing.ContactInformation = updatedJobListing.ContactInformation;
+                jobListing.Description = updatedJobListing.Description;
+                jobListing.ApplyLink = updatedJobListing.ApplyLink;
+            }
+            var mergedList = SeleniumTestsHelpers.MergeJobListings(newJobListings, savedJobListings.JobListingsList);
+            SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
         }
+        else
+        {
+            TestContext.WriteLine($"No new job listings found after comparing live with already existing jobListings on file: {fileName}");
+        }
+
+        //loop over each jobListing, open link and extract info
+
             
-        var existingJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
-        var mergedList = SeleniumTestsHelpers.MergeJobListings(jobListings, existingJobListings.JobListingsList);
-        SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
     }
 
     public void MergeResultFilesToExcelFile(string fileName, string[] files)
