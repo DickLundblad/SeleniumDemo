@@ -35,7 +35,6 @@ public class JobListingsApi
         var savedJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
         var newJobListings = SeleniumTestsHelpers.ExtractNewJobListings(liveJobListings, savedJobListings.JobListingsList);
 
-        
         if (newJobListings.Count >0)
         {
             TestContext.WriteLine($"Number of new job listings to open and parse: {newJobListings.Count}");
@@ -57,10 +56,6 @@ public class JobListingsApi
         {
             TestContext.WriteLine($"No new job listings found after comparing live with already existing jobListings on file: {fileName}");
         }
-
-        //loop over each jobListing, open link and extract info
-
-            
     }
 
     public void MergeResultFilesToExcelFile(string fileName, string[] files)
