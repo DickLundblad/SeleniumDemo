@@ -50,7 +50,7 @@ jobs:
            ls ${{ github.workspace }}
        - name: run DotNetCrtfJsonReporter to convert TRX file into a CTRF
          if: always()
-         run: dotnet tool run DotnetCtrfJsonReporter -p "TestResults/testResults.trx"
+         run: dotnet tool run DotnetCtrfJsonReporter -p "*/TestResults/testResults.trx"
        - name: List files in the repository
          if: always()
          run: |
