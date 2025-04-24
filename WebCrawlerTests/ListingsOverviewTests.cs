@@ -1,8 +1,6 @@
-﻿using OfficeOpenXml;
-using OpenQA.Selenium.DevTools.V133.Network;
-using SeleniumDemo.Models;
+﻿using SeleniumDemo.Models;
 
-namespace SeleniumDemo
+namespace SeleniumDemo.WebCrawlerTests
 {
     public class ListingsOverviewTests
     {

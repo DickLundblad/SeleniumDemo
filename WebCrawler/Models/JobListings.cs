@@ -40,14 +40,14 @@ namespace SeleniumDemo.Models
                 existingJob.Description = job.Description;
                 existingJob.ApplyLink = job.ApplyLink;
 
-                TestContext.WriteLine($"Job updated: {job.JobLink}");
+                Console.WriteLine($"Job updated: {job.JobLink}");
                 return true; // Job updated successfully
             }
             else
             {
                 // Insert the new job
                 jobListings.Add(job);
-                TestContext.WriteLine($"Job added: {job.JobLink}");
+                Console.WriteLine($"Job added: {job.JobLink}");
                 return true; // Job added successfully
             }
         }

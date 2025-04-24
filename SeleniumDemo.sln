@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35818.85
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeleniumDemo", "SeleniumDemo.csproj", "{F5C78296-72EB-4D52-BEBC-F1605A37EE22}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCrawlerTests", "WebCrawlerTests\WebCrawlerTests.csproj", "{BD1C97E6-E466-45C0-8F5F-7B4B5AE7D76F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCrawler", "WebCrawler\WebCrawler.csproj", "{2C99795A-AC5D-00E3-EB49-DD4507DBE63F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{F5C78296-72EB-4D52-BEBC-F1605A37EE22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F5C78296-72EB-4D52-BEBC-F1605A37EE22}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F5C78296-72EB-4D52-BEBC-F1605A37EE22}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F5C78296-72EB-4D52-BEBC-F1605A37EE22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD1C97E6-E466-45C0-8F5F-7B4B5AE7D76F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD1C97E6-E466-45C0-8F5F-7B4B5AE7D76F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD1C97E6-E466-45C0-8F5F-7B4B5AE7D76F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD1C97E6-E466-45C0-8F5F-7B4B5AE7D76F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C99795A-AC5D-00E3-EB49-DD4507DBE63F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C99795A-AC5D-00E3-EB49-DD4507DBE63F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C99795A-AC5D-00E3-EB49-DD4507DBE63F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C99795A-AC5D-00E3-EB49-DD4507DBE63F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -70,13 +70,4 @@ public class ChatGPTService
     }
 }
 
-// Usage example
-class Program
-{
-    static async Task Main(string[] args)
-    {
-        var chatService = new ChatGPTService("your-api-key-here");
-        var response = await chatService.GetChatResponse("What's the capital of France?");
-        Console.WriteLine(response);
-    }
-}
+

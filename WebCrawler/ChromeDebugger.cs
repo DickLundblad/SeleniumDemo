@@ -21,7 +21,7 @@ namespace SeleniumDemo
             var chromeProcesses = System.Diagnostics.Process.GetProcessesByName("chrome");
             if (chromeProcesses.Length == 0)
             {
-                TestContext.WriteLine("No Chrome instances found, start a new one.");
+                Console.WriteLine("No Chrome instances found, start a new one.");
                 System.Diagnostics.Process.Start(@"C:\Program Files\Google\Chrome\Application\chrome.exe",
                     @"--remote-debugging-port=9222 --user-data-dir=C:\ChromeDebug");
                 // Optional: wait a bit for Chrome to fully initialize
@@ -29,7 +29,7 @@ namespace SeleniumDemo
             }
             else
             {
-                TestContext.WriteLine("An existing Chrome instance is already running.");
+                Console.WriteLine("An existing Chrome instance is already running.");
             }
 
             var options = new ChromeOptions();
@@ -40,8 +40,8 @@ namespace SeleniumDemo
 
             try
             {
-                TestContext.WriteLine("Connected to existing browser");
-                TestContext.WriteLine("Current URL: " + driver.Url);
+                Console.WriteLine("Connected to existing browser");
+                Console.WriteLine("Current URL: " + driver.Url);
 
                 // Example: open a new tab and navigate
                 driver.Navigate().GoToUrl("https://example.com");
@@ -54,7 +54,7 @@ namespace SeleniumDemo
         }
         catch (WebDriverException ex)
         {
-            TestContext.WriteLine($"Failed to connect to the existing Chrome instance: {ex.Message}");
+            Console.WriteLine($"Failed to connect to the existing Chrome instance: {ex.Message}");
             throw;
         }
         return driver;

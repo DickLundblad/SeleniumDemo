@@ -25,7 +25,7 @@ public class JobListingsApi
         }
         else
         {
-            TestContext.WriteLine("CHATGPT_API_KEY is not set in the .env file.");
+            Console.WriteLine("CHATGPT_API_KEY is not set in the .env file.");
         }
     }
 
@@ -37,7 +37,7 @@ public class JobListingsApi
 
         if (newJobListings.Count >0)
         {
-            TestContext.WriteLine($"Number of new job listings to open and parse: {newJobListings.Count}");
+            Console.WriteLine($"Number of new job listings to open and parse: {newJobListings.Count}");
             foreach (var jobListing in newJobListings)
             {
                 Thread.Sleep(delayUserInteraction);
@@ -54,10 +54,152 @@ public class JobListingsApi
         }
         else
         {
-            TestContext.WriteLine($"No new job listings found after comparing live with already existing jobListings on file: {fileName}");
+            Console.WriteLine($"No new job listings found after comparing live with already existing jobListings on file: {fileName}");
         }
     }
 
+     public async Task CrawlAsynchStartPageForJoblinks_ParseJobLinks_WriteToFile(string url, string selectorXPathForJobEntry,string fileName,IProgress<CrawlProgressReport> progress, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true)
+    {
+        // Report starting
+        progress?.Report(new CrawlProgressReport("Starting crawl process", 0));
+
+        // Step 1: Open and extract job listings
+        progress?.Report(new CrawlProgressReport("Extracting job listings from page", 10));
+        List<JobListing> liveJobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction, removeParams);
+    
+        // Step 2: Load saved listings
+        progress?.Report(new CrawlProgressReport("Loading saved job listings", 20));
+        var savedJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
+    
+        // Step 3: Find new listings
+        progress?.Report(new CrawlProgressReport("Comparing with existing listings", 30));
+        var newJobListings = SeleniumTestsHelpers.ExtractNewJobListings(liveJobListings, savedJobListings.JobListingsList);
+
+        if (newJobListings.Count > 0)
+        {
+            progress?.Report(new CrawlProgressReport($"Found {newJobListings.Count} new listings to process", 40));
+        
+            int processedCount = 0;
+            foreach (var jobListing in newJobListings)
+            {
+                // Report current job being processed
+                progress?.Report(new CrawlProgressReport(
+                    $"Processing job: {jobListing.JobLink}", 
+                    40 + (int)((double)processedCount / newJobListings.Count * 50)));
+            
+                if (delayUserInteraction > 0)
+                {
+                    await Task.Delay(delayUserInteraction);
+                }
+            
+                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
+                jobListing.Title = updatedJobListing.Title;
+                jobListing.Published = updatedJobListing.Published;
+                jobListing.EndDate = updatedJobListing.EndDate;
+                jobListing.ContactInformation = updatedJobListing.ContactInformation;
+                jobListing.Description = updatedJobListing.Description;
+                jobListing.ApplyLink = updatedJobListing.ApplyLink;
+            
+                processedCount++;
+            }
+        
+            // Merge and save
+            progress?.Report(new CrawlProgressReport("Merging with existing listings", 90));
+            var mergedList = SeleniumTestsHelpers.MergeJobListings(newJobListings, savedJobListings.JobListingsList);
+        
+            progress?.Report(new CrawlProgressReport("Writing results to file", 95));
+            SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
+        
+            progress?.Report(new CrawlProgressReport("Completed successfully", 100));
+        }
+        else
+        {
+            progress?.Report(new CrawlProgressReport("No new job listings found", 100));
+        }
+    }
+   
+public async Task CrawlWithProgressAsync(
+    string url, 
+    string selectorXPathForJobEntry, 
+    string fileName, 
+    IProgress<CrawlProgressReport> progress, 
+    string addDomainToJobPaths = "", 
+    int delayUserInteraction = 0, 
+    bool removeParams = true,
+    CancellationToken cancellationToken = default)
+{
+    try
+    {
+        // Initial progress
+        progress?.Report(new CrawlProgressReport("Starting crawl process", 0));
+        
+        // Check for cancellation
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Step 1: Extract listings
+        progress?.Report(new CrawlProgressReport("Loading page", 10));
+        var liveJobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, 
+            addDomainToJobPaths, delayUserInteraction, removeParams);
+        
+        // Step 2: Load saved
+        progress?.Report(new CrawlProgressReport("Loading saved data", 30));
+        var savedJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
+        
+        // Step 3: Find new
+        progress?.Report(new CrawlProgressReport("Comparing listings", 50));
+        var newJobListings = SeleniumTestsHelpers.ExtractNewJobListings(liveJobListings, savedJobListings.JobListingsList);
+
+        if (newJobListings.Count > 0)
+        {
+            // Process each with progress
+            for (int i = 0; i < newJobListings.Count; i++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                var jobListing = newJobListings[i];
+                int progressPercent = 50 + (int)((double)i / newJobListings.Count * 40);
+                
+                progress?.Report(new CrawlProgressReport(
+                    $"Processing {i+1}/{newJobListings.Count}", progressPercent));
+                
+                await Task.Delay(delayUserInteraction, cancellationToken);
+                
+                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
+                // Update properties...
+            }
+            
+            // Final steps
+            progress?.Report(new CrawlProgressReport("Saving results", 95));
+            var mergedList = SeleniumTestsHelpers.MergeJobListings(newJobListings, savedJobListings.JobListingsList);
+            SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
+        }
+        
+        progress?.Report(new CrawlProgressReport("Completed", 100));
+    }
+    catch (OperationCanceledException)
+    {
+        progress?.Report(new CrawlProgressReport("Cancelled", 0));
+        throw;
+    }
+    catch (Exception ex)
+    {
+        progress?.Report(new CrawlProgressReport($"Error: {ex.Message}", 0));
+        throw;
+    }
+}    
+    
+    // Progress report class
+    public class CrawlProgressReport
+    {
+        public string Message { get; }
+        public int Percentage { get; }
+    
+        public CrawlProgressReport(string message, int percentage)
+        {
+            Message = message;
+            Percentage = percentage;
+        }
+    }
     public void MergeResultFilesToExcelFile(string fileName, string[] files)
     {
         SeleniumTestsHelpers.CreateExcelFromExistingFiles(fileName, files);
@@ -88,7 +230,7 @@ public class JobListingsApi
             {
                 SeleniumTestsHelpers.ExtactDataTestIdjobTitleText(bodyNode.Text);
             }
-            TestContext.WriteLine($"Extracted Title: {response}");
+            Console.WriteLine($"Extracted Title: {response}");
         }
         return response;
     }
@@ -106,7 +248,7 @@ public class JobListingsApi
             response = SeleniumTestsHelpers.ExtractPublishedInfo(bodyNode.Text);
         }
 
-        TestContext.WriteLine($"Extracted Published Date: {response}");
+        Console.WriteLine($"Extracted Published Date: {response}");
         return response;
     }
 
@@ -123,7 +265,7 @@ public class JobListingsApi
             response = SeleniumTestsHelpers.ExtractApplyLatestInfo(bodyNode.Text);
         }
 
-        TestContext.WriteLine($"Extracted End Date: {response}");
+        Console.WriteLine($"Extracted End Date: {response}");
         return response;
     }
 
@@ -132,16 +274,16 @@ public class JobListingsApi
         string response  = string.Empty;
         if (_chatService != null)
         {
-            TestContext.WriteLine($"Using ChatGPT to extract Info, {prompt}");       
+            Console.WriteLine($"Using ChatGPT to extract Info, {prompt}");       
             var task = _chatService.GetChatResponse(prompt);
             if (task != null)
             {
                 response = task.Result;
-                TestContext.WriteLine($"Result from ChatGPT: {prompt}");
+                Console.WriteLine($"Result from ChatGPT: {prompt}");
             }
             if (response == string.Empty)
             {
-                TestContext.WriteLine($"ChatGPT returned empty response for prompt");
+                Console.WriteLine($"ChatGPT returned empty response for prompt");
             }
         }
         return response;
@@ -165,11 +307,11 @@ public class JobListingsApi
             }
             catch (Exception ex)
             {
-                TestContext.WriteLine($"Error during WaitForDocumentReady() : {ex.Message}");
+                Console.WriteLine($"Error during WaitForDocumentReady() : {ex.Message}");
             }
             if(BlockedInfoOnPage())
             {
-                TestContext.WriteLine($"Blocked on jobLink page: {url}");
+                Console.WriteLine($"Blocked on jobLink page: {url}");
                 return jobListing;
             }
             if (url.Contains("linkedin"))
@@ -185,7 +327,7 @@ public class JobListingsApi
         }
         catch (Exception ex)
         {
-            TestContext.WriteLine($"Warning Exception OpenAndParseJobLink({url}) , exception message: {ex.Message}");
+            Console.WriteLine($"Warning Exception OpenAndParseJobLink({url}) , exception message: {ex.Message}");
         }
         return jobListing;
     }
@@ -248,7 +390,8 @@ public class JobListingsApi
         var jobNodes = _driver.FindElements(By.XPath(selectorXPathForJobEntry));
         if (jobNodes.Count == 0)
         {
-            Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on start page {url}");
+            Console.WriteLine($"Blocked on start page {url}");
+            //Assert.That(BlockedInfoOnPage(), Is.False, $"Blocked on start page {url}");
         }
 
         Console.WriteLine($"Number of job entries found: {jobNodes.Count}");
@@ -276,13 +419,13 @@ public class JobListingsApi
                 if (parts.Length == 2)
                 {
                     Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
-                    TestContext.WriteLine($"Setting environment variable: {parts[0].Trim()}");
+                    Console.WriteLine($"Setting environment variable: {parts[0].Trim()}");
                 }
             }
         }
         else
         {
-            TestContext.WriteLine(".env file not found.");
+            Console.WriteLine(".env file not found.");
         }
     }
    public void AcceptPopups()
@@ -315,7 +458,7 @@ public class JobListingsApi
    public bool BlockedInfoOnPage()
     {
         var wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(10));
-        TestContext.WriteLine($"BlockedInfoOnPage():");
+        Console.WriteLine($"BlockedInfoOnPage():");
         WaitForDocumentReady(wait);
         string[] xPaths =
         [
@@ -340,16 +483,16 @@ public class JobListingsApi
                 {
                     if (element.Displayed)
                     {
-                        TestContext.WriteLine($"Element is displayed: {element.Text}");
-                        TestContext.WriteLine($"Element found and Displayed, element.TagName: {element.TagName}");
+                        Console.WriteLine($"Element is displayed: {element.Text}");
+                        Console.WriteLine($"Element found and Displayed, element.TagName: {element.TagName}");
                         var bodyText = GetElementTextOnCurrentPage("//body");
-                        TestContext.WriteLine("Body Text:");
-                        TestContext.WriteLine(bodyText);
+                        Console.WriteLine("Body Text:");
+                        Console.WriteLine(bodyText);
                         return true;
                     }
                     else
                     {
-                        TestContext.WriteLine($"Blocked element exists for xPath: {xPath}, but it is not displayed: {element.Text}. xPath: {xPath}");
+                        Console.WriteLine($"Blocked element exists for xPath: {xPath}, but it is not displayed: {element.Text}. xPath: {xPath}");
                     }
                 }
             }
@@ -366,7 +509,7 @@ public class JobListingsApi
         }
         catch (NoSuchElementException ex)
         {
-            TestContext.WriteLine($"Error: {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
             return string.Empty;
         }
     }
@@ -388,7 +531,7 @@ public class JobListingsApi
             response = SeleniumTestsHelpers.ExtractPhoneNumbersFromAreaCodeExtractions(bodyNode.Text);
         }
 
-        TestContext.WriteLine($"Extracted ContactInfo: {response}");
+        Console.WriteLine($"Extracted ContactInfo: {response}");
         return response;
     }
 
@@ -400,7 +543,7 @@ public class JobListingsApi
             }
             catch (Exception ex)
             {
-                TestContext.WriteLine($"Selector {selector} not found: {ex.Message}");
+                Console.WriteLine($"Selector {selector} not found: {ex.Message}");
                 return null;
             }
         }

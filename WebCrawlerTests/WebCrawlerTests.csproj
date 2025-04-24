@@ -1,30 +1,29 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
-    <OutputType>Library</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ClosedXML" Version="0.104.2" />
-    <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="CsvHelper" Version="33.0.1" />
-    <PackageReference Include="EPPlus" Version="8.0.1" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.12.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageReference Include="NUnit" Version="3.14.0" />
-    <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-    <PackageReference Include="Selenium.Support" Version="4.31.0" />
-    <PackageReference Include="Selenium.WebDriver" Version="4.31.0" />
-    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="135.0.7049.8400" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.1" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="NUnit" Version="4.3.2" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.7.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WebCrawler\WebCrawler.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,15 +31,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="API\" />
-    <Folder Include="TestData\OfflinePages\AIResponse\ContactInformation\" />
-    <Folder Include="TestData\OfflinePages\Body\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="JobCrawlSites.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="TestData\OfflinePages\AIResponse\ContactInformation\LinkedIn.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

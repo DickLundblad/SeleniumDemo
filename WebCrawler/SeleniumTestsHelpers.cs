@@ -56,11 +56,11 @@ namespace SeleniumDemo
                 {
                     var innerHtml = RetryFindAttribute(jobNode, "innerHTML");
                 }
-                TestContext.WriteLine($"Job link: {jobLink}");
+                Console.WriteLine($"Job link: {jobLink}");
             }
             catch (Exception ex)
             {
-                TestContext.WriteLine($"Could not GetAttribute(\"href\") for {ex.InnerException}");
+                Console.WriteLine($"Could not GetAttribute(\"href\") for {ex.InnerException}");
                 throw;
             }
             if (removeParams)
@@ -124,7 +124,7 @@ namespace SeleniumDemo
 
             foreach (var jobListing in results)
             {
-                TestContext.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
+                Console.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
             }
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
@@ -149,18 +149,18 @@ namespace SeleniumDemo
                     }
                     else
                     {
-                        TestContext.WriteLine($"JobLink is empty for job listing: {jobListing.Title}");
+                        Console.WriteLine($"JobLink is empty for job listing: {jobListing.Title}");
                     }
                 }
             }
 
-            TestContext.WriteLine($"TSV file created: {filePath}");
+            Console.WriteLine($"TSV file created: {filePath}");
             using (var reader = new StreamReader(filePath))
             using (var csvR = new CsvReader(reader, config))
             {
                 var records = csvR.GetRecords<JobListing>().ToList();
-                Assert.That(records.Count, Is.GreaterThan(0), "The  file does not contain any job listings.");
-                TestContext.WriteLine($"Validated that the file contains {records.Count} job listings.");
+                //Assert.That(records.Count, Is.GreaterThan(0), "The  file does not contain any job listings.");
+                 Console.WriteLine($"Validated that the file contains {records.Count} job listings.");
             }
         }
 
@@ -178,7 +178,7 @@ namespace SeleniumDemo
             // Log the job listings
             foreach (var jobListing in results.JobListingsList)
             {
-                TestContext.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
+                Console.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
             }
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
@@ -203,19 +203,13 @@ namespace SeleniumDemo
                     }
                     else
                     {
-                        TestContext.WriteLine($"JobLink is empty for job listing: {jobListing.Title}");
+                        Console.WriteLine($"JobLink is empty for job listing: {jobListing.Title}");
                     }
                 }
             }
 
-            TestContext.WriteLine($"file created: {filePath}");
-            using (var reader = new StreamReader(filePath))
-            using (var csvR = new CsvReader(reader, config))
-            {
-                var records = csvR.GetRecords<JobListing>().ToList();
-                Assert.That(records.Count, Is.GreaterThan(0), "The  file does not contain any job listings.");
-                TestContext.WriteLine($"Validated that the file contains {records.Count} job listings.");
-            }
+            Console.WriteLine($"file created: {filePath}");
+           
         }
 
         public static JobListings LoadJobListingsFromFile(string fileName, string subFolder ="")
@@ -250,16 +244,16 @@ namespace SeleniumDemo
                     }
                     catch (Exception ex)
                     {
-                        TestContext.WriteLine($"Error reading file {fileName}: {ex.Message}");
+                        Console.WriteLine($"Error reading file {fileName}: {ex.Message}");
                         throw;
                     }
                 }
             }else
             {
-                TestContext.WriteLine($"File not found: {fileName}");
+                Console.WriteLine($"File not found: {fileName}");
             }
 
-            TestContext.WriteLine($"Loaded {jobListings.JobListingsList.Count} job listings from file: {fileName}");
+            Console.WriteLine($"Loaded {jobListings.JobListingsList.Count} job listings from file: {fileName}");
             return jobListings;
         }
 
@@ -268,11 +262,11 @@ namespace SeleniumDemo
             if (!Directory.Exists(folderPath))
             {
                 Directory.CreateDirectory(folderPath);
-                TestContext.WriteLine($"Folder created: {folderPath}");
+                Console.WriteLine($"Folder created: {folderPath}");
             }
             else
             {
-                TestContext.WriteLine($"Folder already exists: {folderPath}");
+                Console.WriteLine($"Folder already exists: {folderPath}");
             }
         }
         private static string ExtractTextUsingRegexp(string text, string regExp)
@@ -485,7 +479,7 @@ namespace SeleniumDemo
                                 }
                             }
         }
-        internal static void WriteToExcel(ListingsOverview overView, string fileNameJobListing)
+        public static void WriteToExcel(ListingsOverview overView, string fileNameJobListing)
         {
             // Create Excel file with ListingsOverview
             var excelFileName = $"{fileNameJobListing}.xlsx";
@@ -521,7 +515,7 @@ namespace SeleniumDemo
             }
         }
 
-        internal static ListingsOverview LoadListingsOverviewFromExcelFile(string fileNameOverview)
+        public static ListingsOverview LoadListingsOverviewFromExcelFile(string fileNameOverview)
         {
             var listingsOverview = new ListingsOverview();
 

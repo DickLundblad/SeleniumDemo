@@ -23,7 +23,7 @@ namespace SeleniumDemo.Models
                     updated = existingList.InsertOrUpdate(jobListItem);
                     if (updated == false)
                     {
-                        TestContext.WriteLine($"Job listings not updated: {jobListItem.JobLink}");
+                        Console.WriteLine($"Job listings not updated: {jobListItem.JobLink}");
                         return false; // Job listings not updated
                     }
                 }
@@ -33,7 +33,7 @@ namespace SeleniumDemo.Models
             {
                 // Insert the new list
                 jobListings.Add(list);
-                TestContext.WriteLine($"Job listings added: {list.Name}");
+                Console.WriteLine($"Job listings added: {list.Name}");
                 return true; // Job listings added successfully
             }
         }
