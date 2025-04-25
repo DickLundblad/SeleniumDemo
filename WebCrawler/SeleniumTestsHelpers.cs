@@ -2,12 +2,12 @@
 using CsvHelper;
 using CsvHelper.Configuration;
 using OpenQA.Selenium;
-using SeleniumDemo.Models;
+using WebCrawler.Models;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace SeleniumDemo
+namespace WebCrawler
 {
     public static class SeleniumTestsHelpers
     {

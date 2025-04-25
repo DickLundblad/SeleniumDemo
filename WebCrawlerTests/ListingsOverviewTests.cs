@@ -1,6 +1,6 @@
-﻿using SeleniumDemo.Models;
+﻿using WebCrawler.Models;
 
-namespace SeleniumDemo.WebCrawlerTests
+namespace WebCrawler.WebCrawlerTests
 {
     public class ListingsOverviewTests
     {

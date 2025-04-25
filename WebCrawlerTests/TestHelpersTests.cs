@@ -1,4 +1,4 @@
-﻿namespace SeleniumDemo
+﻿namespace WebCrawler
 {
     [TestFixture]
     public class TestHelpersTests

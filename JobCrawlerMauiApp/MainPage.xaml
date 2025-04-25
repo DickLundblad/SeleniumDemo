@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"  
+            xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"  
+            x:Class="JobCrawlerMauiApp.MainPage">
+    <VerticalStackLayout>
+        <ProgressBar x:Name="ProgressBar" 
+                     WidthRequest="250"
+                 ProgressColor ="Green" />
+        <Label x:Name="ProgressLabel"/>
+        <Button  
+           x:Name="CrawlBtn"  
+           Text="Crawl Selected sites" 
+           Clicked="OnCrawlClicked" />
+        <Label Text="Sitest to crawl:" FontSize="18" FontAttributes="Bold"/>
+        <Border Padding="20" BackgroundColor="#e0e0e0">
+            <HorizontalStackLayout>
+                <Label Text="URL" FontAttributes="Bold" WidthRequest="250"/>
+                <Label Text="Selector XPath" FontAttributes="Bold" WidthRequest="250"/>
+                <Label Text="File Name" FontAttributes="Bold" WidthRequest="250"/>
+                <Label Text="Add Domain" FontAttributes="Bold" WidthRequest="250"/>
+                <Label Text="Delay" FontAttributes="Bold" WidthRequest="80"/>
+                <Label Text="Remove Params" FontAttributes="Bold" WidthRequest="100"/>
+                <Label  Text="Crawl"  WidthRequest="100"/>
+            </HorizontalStackLayout>
+        </Border>
+        <CollectionView x:Name="DataCollectionView">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Padding="20" BackgroundColor="#f0f0f0">
+                        <HorizontalStackLayout>
+                            <Label Text="{Binding Url}" FontAttributes="Bold" WidthRequest="250"/>
+                            <Label Text="{Binding SelectorXPathForJobEntry}" WidthRequest="250"/>
+                            <Label Text="{Binding FileName}" WidthRequest="250"/>
+                            <Label Text="{Binding AddDomainToJobPaths}"  WidthRequest="250"/>
+                            <Label Text="{Binding DelayUserInteraction}" WidthRequest="80"/>
+                            <Label Text="{Binding RemoveParamsInJobLinks}" WidthRequest="100"/>
+                            <CheckBox IsChecked="{Binding IsSelected}" 
+                             Color="#3498db"
+                             VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </VerticalStackLayout>
+</ContentPage>

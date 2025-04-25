@@ -1,4 +1,4 @@
-using SeleniumDemo.Models;
+using WebCrawler.Models;
 
 public class JobListingComparer : IEqualityComparer<JobListing>
 {

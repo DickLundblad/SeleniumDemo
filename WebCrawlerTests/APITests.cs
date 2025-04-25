@@ -1,7 +1,7 @@
 ﻿using OpenQA.Selenium;
 
 
-namespace SeleniumDemo
+namespace WebCrawler
 {
     [TestFixture]
     public class APITests

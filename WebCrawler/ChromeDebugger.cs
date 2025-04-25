@@ -1,7 +1,7 @@
 ﻿using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium;
 
-namespace SeleniumDemo
+namespace WebCrawler
 {
     public static class ChromeDebugger
     {

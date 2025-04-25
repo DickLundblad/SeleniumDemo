@@ -1,6 +1,6 @@
-﻿using SeleniumDemo.Models;
+﻿using WebCrawler.Models;
 
-namespace SeleniumDemo
+namespace WebCrawler
 {
     public class ResultFileOperationsTests
     {

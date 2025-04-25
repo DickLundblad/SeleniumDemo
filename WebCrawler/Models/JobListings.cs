@@ -1,7 +1,7 @@
 ﻿
 using DocumentFormat.OpenXml.Math;
 
-namespace SeleniumDemo.Models
+namespace WebCrawler.Models
 {
     public class JobListings
     {

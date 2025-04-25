@@ -2,8 +2,8 @@ using DocumentFormat.OpenXml.Bibliography;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
-using SeleniumDemo.Models;
-using SeleniumDemo;
+using WebCrawler.Models;
+using WebCrawler;
 using System.Collections.Generic;
 using System.Threading;
 

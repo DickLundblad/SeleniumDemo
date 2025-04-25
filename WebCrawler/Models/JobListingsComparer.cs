@@ -1,4 +1,4 @@
-﻿namespace SeleniumDemo.Models
+﻿namespace WebCrawler.Models
 {
     internal class JobListingsComparer:IEqualityComparer<JobListings>
     {
