@@ -61,6 +61,7 @@ namespace WebCrawler
             catch (Exception ex)
             {
                 Console.WriteLine($"Could not GetAttribute(\"href\") for {ex.InnerException}");
+                //return null;
                 throw;
             }
             if (removeParams)

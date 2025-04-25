@@ -13,7 +13,7 @@ public class ChatGPTService
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
     }
 
-    public async Task<string> GetChatResponse(string prompt)
+    public async Task<string> GetChatResponseAsync(string prompt, CancellationToken cancellationToken = default)
     {
         const string apiUrl = "https://api.openai.com/v1/chat/completions";
 

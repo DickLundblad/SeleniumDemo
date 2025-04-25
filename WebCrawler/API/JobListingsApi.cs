@@ -162,10 +162,21 @@ public async Task CrawlWithProgressAsync(
                 progress?.Report(new CrawlProgressReport(
                     $"Processing {i+1}/{newJobListings.Count}", progressPercent));
                 
+                 if (delayUserInteraction > 0)
+                {
+                    await Task.Delay(delayUserInteraction);
+                }
+
                 await Task.Delay(delayUserInteraction, cancellationToken);
                 
                 var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
-                // Update properties...
+                // Update properties.
+                jobListing.Title = updatedJobListing.Title;
+                jobListing.Published = updatedJobListing.Published;
+                jobListing.EndDate = updatedJobListing.EndDate;
+                jobListing.ContactInformation = updatedJobListing.ContactInformation;
+                jobListing.Description = updatedJobListing.Description;
+                jobListing.ApplyLink = updatedJobListing.ApplyLink;
             }
             
             // Final steps
@@ -174,7 +185,7 @@ public async Task CrawlWithProgressAsync(
             SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
         }
         
-        progress?.Report(new CrawlProgressReport("Completed", 100));
+        progress?.Report(new CrawlProgressReport("Completed crawling", 100));
     }
     catch (OperationCanceledException)
     {
@@ -269,21 +280,55 @@ public async Task CrawlWithProgressAsync(
         return response;
     }
 
+    private async Task<string> ChatGPTSearchAsync(string prompt)
+    {
+        if (_chatService == null)
+        {
+            Console.WriteLine("Chat service not initialized");
+            return string.Empty;
+        }
+
+        Console.WriteLine($"Using ChatGPT to extract Info: {prompt}");
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)); // 30-second timeout
+            string response = await _chatService.GetChatResponseAsync(prompt, cts.Token);
+
+            if (string.IsNullOrEmpty(response))
+            {
+                Console.WriteLine("ChatGPT returned empty response");
+                return string.Empty;
+            }
+
+            Console.WriteLine($"Successfully received response from ChatGPT");
+            return response;
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("ChatGPT request timed out");
+            return string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ChatGPT request failed: {ex.Message}");
+            return string.Empty;
+        }
+    }
    private string ChatGPTSearch(string prompt)
    { 
         string response  = string.Empty;
         if (_chatService != null)
         {
-            Console.WriteLine($"Using ChatGPT to extract Info, {prompt}");       
-            var task = _chatService.GetChatResponse(prompt);
-            if (task != null)
+            Console.WriteLine($"Using ChatGPT to extract Info, {prompt}");
+            try
             {
-                response = task.Result;
-                Console.WriteLine($"Result from ChatGPT: {prompt}");
+                return ChatGPTSearchAsync(prompt).GetAwaiter().GetResult();
             }
-            if (response == string.Empty)
+            catch (Exception ex)
             {
-                Console.WriteLine($"ChatGPT returned empty response for prompt");
+                Console.WriteLine($"Synchronous wrapper failed for ChatGPT search: {ex}");
+                return string.Empty;
             }
         }
         return response;

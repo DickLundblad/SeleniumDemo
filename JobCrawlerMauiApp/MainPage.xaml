@@ -3,10 +3,8 @@
             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"  
             x:Class="JobCrawlerMauiApp.MainPage">
     <VerticalStackLayout>
-        <ProgressBar x:Name="ProgressBar" 
-                     WidthRequest="250"
-                 ProgressColor ="Green" />
-        <Label x:Name="ProgressLabel"/>
+        <ProgressBar x:Name="ProgressBar" WidthRequest="250" ProgressColor ="Green"/>
+        <Label x:Name="ProgressLabel" Text="Progress"/>
         <Button  
            x:Name="CrawlBtn"  
            Text="Crawl Selected sites" 
