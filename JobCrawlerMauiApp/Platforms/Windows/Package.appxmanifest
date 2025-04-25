@@ -7,7 +7,7 @@
   xmlns:uap18="http://schemas.microsoft.com/appx/manifest/uap/windows10/18"
   IgnorableNamespaces="uap rescap uap18">
 
-  <Identity Name="maui-package-name-placeholder" Publisher="CN=User Name" Version="0.0.0.0" />
+  <Identity Name="maui-package-name-placeholder" Publisher="CN=dickl" Version="1.1.3.0" />
 
   <mp:PhoneIdentity PhoneProductId="28C9F081-61CF-4EA3-80B3-6496A1AF861A" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
@@ -27,7 +27,7 @@
   </Resources>
 
   <Applications>
-    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$" uap18:TrustLevel="mediumIL" uap18:RuntimeBehavior="windowsApp">
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$" >
       <uap:VisualElements
         DisplayName="$placeholder$"
         Description="$placeholder$"
