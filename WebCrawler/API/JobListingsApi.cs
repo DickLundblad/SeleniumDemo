@@ -160,7 +160,7 @@ public async Task CrawlWithProgressAsync(
                 int progressPercent = 50 + (int)((double)i / newJobListings.Count * 40);
                 
                 progress?.Report(new CrawlProgressReport(
-                    $"Processing {i+1}/{newJobListings.Count}", progressPercent));
+                    $"Processing {i+1}/{newJobListings.Count} {fileName}", progressPercent));
                 
                  if (delayUserInteraction > 0)
                 {
@@ -185,7 +185,7 @@ public async Task CrawlWithProgressAsync(
             SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
         }
         
-        progress?.Report(new CrawlProgressReport("Completed crawling", 100));
+        progress?.Report(new CrawlProgressReport($"Completed crawling: {fileName}", 100));
     }
     catch (OperationCanceledException)
     {

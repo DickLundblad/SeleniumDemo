@@ -114,7 +114,7 @@ namespace JobCrawlerMauiApp
             finally
             {
                 MainThread.BeginInvokeOnMainThread(() => CrawlBtn.IsEnabled = true);
-                MainThread.BeginInvokeOnMainThread(() => ProgressLabel.Text = "Ready"); ;
+                //MainThread.BeginInvokeOnMainThread(() => ProgressLabel.Text = "Ready"); ;
             }
         }
     }
