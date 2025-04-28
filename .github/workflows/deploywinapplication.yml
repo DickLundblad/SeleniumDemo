@@ -37,7 +37,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      - name: List files in the repository
+        run: |
+           ls ${{ github.workspace }}
       - name: Verify project file exists
         run: |
           $projectPath = "SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj"
