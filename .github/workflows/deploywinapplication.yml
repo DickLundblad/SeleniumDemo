@@ -5,6 +5,22 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:    # Allows manual triggering
+    inputs:
+      build-config:
+        description: 'Build Configuration'
+        type: choice
+        options:
+          - Release
+          - Debug
+        default: 'Release'
+      platform:
+        description: 'Target Platform'
+        type: choice
+        options:
+          - x64
+          - x86
+        default: 'x64'
 
 permissions:
   contents: write
