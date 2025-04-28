@@ -1,4 +1,4 @@
-﻿name: Build WPF Application
+﻿name: Build Windows Application
 
 on:
   push:
@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [ "master" ]
 
+permissions:
+  contents: write
+  actions: write
+
 jobs:
   build-and-package:
-    runs-on: windows-latest  # Required for WPF builds
+    runs-on: windows-latest  # Changed to Windows runner for Windows app builds
     
     steps:
     - name: Checkout code
@@ -23,45 +27,42 @@ jobs:
       run: dotnet restore
       
     - name: Build Release version
-      run: dotnet build --configuration Release -p:Platform=x64
+      run: dotnet build --configuration Release
       
     - name: Publish as self-contained
-      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Platform=x64
+      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
       
-    - name: Create Setup Package (Inno Setup)
-      uses: ammaraskar/setup-innosetup@v1
-      with:
-        version: '6.2.2'
-        
-    - name: Compile Inno Setup installer
+    - name: Create MSIX package (optional)
       run: |
-        # Create a basic ISS file if none exists
-        if (-not (Test-Path "setup.iss")) {
-          @"
-            [Setup]
-            AppName=MyWpfApp
-            AppVersion=1.0
-            DefaultDirName={pf}\MyWpfApp
-            DefaultGroupName=MyWpfApp
-            OutputDir=.\artifacts
-            OutputBaseFilename=MyWpfApp-Setup
-            Compression=lzma
-            SolidCompression=yes
-
-            [Files]
-            Source: "bin\Release\net9.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
-
-            [Icons]
-            Name: "{group}\My WPF App"; Filename: "{app}\MyWpfApp.exe"
-            "@ | Out-File -FilePath "setup.iss" -Encoding utf8
-                    }
+        # Only works for MAUI/WinUI projects with proper packaging setup
+        dotnet publish -c Release -f net9.0-windows10.0.19041.0 -p:GenerateAppxPackageOnBuild=true
         
-                    iscc setup.iss
+    - name: Zip artifacts
+      run: |
+        $outputDir = "$env:GITHUB_WORKSPACE\artifacts"
+        New-Item -ItemType Directory -Path $outputDir -Force
+        
+        # Zip the published app
+        Compress-Archive -Path "$env:GITHUB_WORKSPACE\bin\Release\net9.0-windows10.0.19041.0\win-x64\publish\*" -DestinationPath "$outputDir\Application.zip"
+        
+        # If MSIX was created, include it
+        if (Test-Path "$env:GITHUB_WORKSPACE\bin\Release\net9.0-windows10.0.19041.0\win-x64\AppPackages\*") {
+          Copy-Item -Path "$env:GITHUB_WORKSPACE\bin\Release\net9.0-windows10.0.19041.0\win-x64\AppPackages\*" -Destination $outputDir -Recurse
+        }
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build-artifacts
+        path: ${{ github.workspace }}/artifacts/
+        
+    # Optional: Test execution (if you have tests)
+    - name: Run tests
+      run: dotnet test --logger "trx;logfilename=testResults.trx"
+      if: always()
       
-                - name: Upload artifacts
-                  uses: actions/upload-artifact@v4
-                  with:
-                    name: wpf-artifacts
-                    path: |
-                      bin\Release\net9.0-windows\win-x64\publish\
-                      artifacts\*.exe
+    - name: Publish test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: ${{ github.workspace }}/**/*.trx
