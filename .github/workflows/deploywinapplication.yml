@@ -48,7 +48,6 @@ jobs:
         run: |
           $vsPath = &"${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
           $msbuildPath = "$vsPath\MSBuild\Current\Bin\MSBuild.exe"
-          echo "MSBuild path: $msbuildPath"
           echo "msbuild-path=$msbuildPath" >> $env:GITHUB_OUTPUT
 
       - name: Install VS Installer Projects Extension
@@ -62,7 +61,7 @@ jobs:
 
       - name: Build installer
         run: |
-          "${{ steps.find-msbuild.outputs.msbuild-path }}" "$env:INSTALLER_PROJECT" `
+          & "${{ steps.find-msbuild.outputs.msbuild-path }}" "$env:INSTALLER_PROJECT" `
             /p:Configuration=${{ github.event.inputs.build-config || 'Release' }} `
             /p:Platform=x64 `
             /p:DeployOnBuild=true `
