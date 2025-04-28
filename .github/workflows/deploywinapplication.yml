@@ -43,20 +43,16 @@ jobs:
 
       - name: Install Visual Studio Installer Projects extension
         run: |
-          # Download and install the VS Installer Projects extension
           $vsixUrl = "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage"
           $installer = "$env:RUNNER_TEMP\VSInstallerProjects.vsix"
           Invoke-WebRequest -Uri $vsixUrl -OutFile $installer
           Start-Process -Wait -FilePath "VSIXInstaller.exe" -ArgumentList "/q /a $installer"
 
-      - name: Restore NuGet packages
-        run: nuget restore $env:SOLUTION_FILE
-
       - name: Build installer project
         run: |
           msbuild "$env:INSTALLER_PROJECT" `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
+            /p:Configuration=${{ github.event.inputs.build-config || 'Release' }} `
+            /p:Platform=${{ github.event.inputs.platform || 'x64' }} `
             /p:DeployOnBuild=true `
             /p:CreatePackageOnPublish=true
 
@@ -65,5 +61,5 @@ jobs:
         with:
           name: WindowsInstaller
           path: |
-                    SetupJobCrawlerWindowsApplication\${{ github.event.inputs.build-config || 'Release' }}/*.msi
-                    SetupJobCrawlerWindowsApplication\${{ github.event.inputs.build-config || 'Release' }}/*.exe
+            SetupJobCrawlerWindowsApplication\${{ github.event.inputs.build-config || 'Release' }}/*.msi
+            SetupJobCrawlerWindowsApplication\${{ github.event.inputs.build-config || 'Release' }}/*.exe
