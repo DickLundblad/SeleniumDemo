@@ -38,17 +38,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '6.0.x'  # Adjust to your project's version
-
-      - name: Find MSBuild Path
-        id: find-msbuild
+      - name: Verify project file exists
         run: |
-          $vsPath = &"${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
-          $msbuildPath = "$vsPath\MSBuild\Current\Bin\MSBuild.exe"
-          echo "msbuild-path=$msbuildPath" >> $env:GITHUB_OUTPUT
+          $projectPath = "SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj"
+          if (-not (Test-Path $projectPath)) {
+              Write-Error "Project file not found at: $projectPath"
+              Get-ChildItem -Recurse -Include *.vdproj
+              exit 1
+          }
+          echo "PROJECT_PATH=$projectPath" >> $env:GITHUB_ENV
 
       - name: Install VS Installer Projects Extension
         run: |
@@ -56,12 +54,13 @@ jobs:
           $installer = "$env:RUNNER_TEMP\VSInstallerProjects.vsix"
           Invoke-WebRequest -Uri $vsixUrl -OutFile $installer
           
-          $vsixInstaller = &"${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath | Join-Path -ChildPath "Common7\IDE\VSIXInstaller.exe"
+          $vsixInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe"
           & "$vsixInstaller" /q /a $installer
 
       - name: Build installer
         run: |
-          & "${{ steps.find-msbuild.outputs.msbuild-path }}" "$env:INSTALLER_PROJECT" `
+          $msbuild = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
+          & "$msbuild" "$env:PROJECT_PATH" `
             /p:Configuration=${{ github.event.inputs.build-config || 'Release' }} `
             /p:Platform=x64 `
             /p:DeployOnBuild=true `
