@@ -1,0 +1,43 @@
+﻿<Window x:Class="JobCrawlerWpfApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:JobCrawlerWpfApp"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+    <StackPanel Margin="20">
+        <Button Content="Load Crawl Info" Width="130" Click="Button_Crawl_Info_Click"/>
+         <Button Content="Start Chrome In Debug" Width="130" Click="Button_Chrome_Debug_Click"/>
+            <Button Content="Crawl Selected Sites" Width="130" Click="Button_Start_Crawl_Click"/>
+            <TextBlock x:Name="StatusLabel" Margin="0,20,0,0" TextWrapping="Wrap"/>
+    </StackPanel>
+        <DataGrid x:Name="CsvDataGrid" Grid.Row="1" Margin="5" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <!-- Checkbox column -->
+                <DataGridTemplateColumn Header="Select" Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              Click="CheckBox_Click"
+                                      HorizontalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Fixed columns for CSV data -->
+                <DataGridTextColumn Header="Url" Binding="{Binding Url}" Width="*"/>
+                <DataGridTextColumn Header="SelectorXPathForJobEntry" Binding="{Binding SelectorXPathForJobEntry}" Width="*"/>
+                <DataGridTextColumn Header="FileName" Binding="{Binding FileName}" Width="*"/>
+                <DataGridTextColumn Header="AddDomainToJobPaths" Binding="{Binding AddDomainToJobPaths}" Width="*"/>
+                <DataGridTextColumn Header="DelayUserInteraction" Binding="{Binding DelayUserInteraction}" Width="*"/>
+                <DataGridTextColumn Header="RemoveParamsInJobLinks" Binding="{Binding RemoveParamsInJobLinks}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>
