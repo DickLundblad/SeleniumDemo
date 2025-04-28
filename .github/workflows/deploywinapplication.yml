@@ -23,8 +23,9 @@ on:
         default: 'x64'
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
+  actions: read
+  packages: read
 
 jobs:
   build-installer:
