@@ -42,7 +42,7 @@ jobs:
            ls ${{ github.workspace }}
       - name: Verify project file exists
         run: |
-          $projectPath = "SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj"
+          $projectPath = "SetupJobCrawlerWindowsApplication\SetupWindowsApplication.vdproj"
           if (-not (Test-Path $projectPath)) {
               Write-Error "Project file not found at: $projectPath"
               Get-ChildItem -Recurse -Include *.vdproj
