@@ -1,4 +1,5 @@
-﻿name: Build Windows Installer
+﻿﻿# This workflow will build a installation project for a Windows application using MSBuild. It assumes you have a Visual Studio Installer Project (.vdproj) in your solution.
+name: Build Windows Installer
 
 on:
   push:
