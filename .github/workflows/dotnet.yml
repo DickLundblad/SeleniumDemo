@@ -1,18 +1,13 @@
-﻿name: Build Windows Application
+﻿name: Build and Deploy WPF Application
 
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-
-permissions:
-  contents: write
-  actions: write
+  workflow_dispatch:
 
 jobs:
-  build-and-package:
-    runs-on: windows-latest  # Changed to Windows runner for Windows app builds
+  build-and-deploy:
+    runs-on: windows-latest
     
     steps:
     - name: Checkout code
@@ -26,43 +21,36 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
       
-    - name: Build Release version
-      run: dotnet build --configuration Release
-      
-    - name: Publish as self-contained
-      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-      
-    - name: Create MSIX package (optional)
+    - name: Build WPF Application (Release)
       run: |
-        # Only works for MAUI/WinUI projects with proper packaging setup
-        dotnet publish -c Release -f net9.0-windows10.0.19041.0 -p:GenerateAppxPackageOnBuild=true
+        dotnet build "SetupJobCrawlerWindowsApplication.sln" --configuration Release -p:Platform=x64 -p:DeployOnBuild=true -p:PublishProfile=FolderProfile
         
-    - name: Zip artifacts
+    - name: Build Deployment Project
       run: |
-        $outputDir = "$env:GITHUB_WORKSPACE\artifacts"
-        New-Item -ItemType Directory -Path $outputDir -Force
+        # Build the setup project (assuming it's a Visual Studio Installer Project)
+        msbuild "SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj" /p:Configuration=Release /p:Platform=x64
         
-        # Zip the published app
-        Compress-Archive -Path "$env:GITHUB_WORKSPACE\bin\Release\net9.0-windows10.0.19041.0\win-x64\publish\*" -DestinationPath "$outputDir\Application.zip"
-        
-        # If MSIX was created, include it
-        if (Test-Path "$env:GITHUB_WORKSPACE\bin\Release\net9.0-windows10.0.19041.0\win-x64\AppPackages\*") {
-          Copy-Item -Path "$env:GITHUB_WORKSPACE\bin\Release\net9.0-windows10.0.19041.0\win-x64\AppPackages\*" -Destination $outputDir -Recurse
-        }
+    - name: Create artifacts directory
+      run: mkdir artifacts
+      
+    - name: Copy deployment files
+      run: |
+        copy "SetupJobCrawlerWindowsApplication\Release\SetupJobCrawlerWindowsApplication.msi" artifacts\
+        copy "SetupJobCrawlerWindowsApplication\Release\SetupJobCrawlerWindowsApplication.exe" artifacts\
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: windows-build-artifacts
-        path: ${{ github.workspace }}/artifacts/
+        name: deployment-package
+        path: artifacts\*
         
-    # Optional: Test execution (if you have tests)
-    - name: Run tests
-      run: dotnet test --logger "trx;logfilename=testResults.trx"
-      if: always()
-      
-    - name: Publish test results
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: ${{ github.workspace }}/**/*.trx
+    - name: Deploy to Test Environment (Optional)
+      if: github.ref == 'refs/heads/master'
+      run: |
+        # Add your deployment commands here, for example:
+        # msiexec /i "artifacts\SetupJobCrawlerWindowsApplication.msi" /quiet
+        # Or deploy to a file share:
+        copy artifacts\* \\server\deployments\JobCrawler\ /Y
+      env:
+        DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+        DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
