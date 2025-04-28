@@ -10,7 +10,7 @@ jobs:
   build-installer:
     runs-on: windows-latest
     env:
-      SOLUTION_FILE: 'YourSolution.sln'  # Update to your solution file
+      SOLUTION_FILE: 'SeleniumDemo.sln'  # Update to your solution file
       INSTALLER_PROJECT: 'SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj'
 
     steps:
