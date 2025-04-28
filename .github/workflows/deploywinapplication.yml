@@ -61,9 +61,9 @@ jobs:
             /p:CreatePackageOnPublish=true
 
       - name: Upload installer artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Updated to v4
         with:
           name: WindowsInstaller
           path: |
-            SetupJobCrawlerWindowsApplication\Release\SetupJobCrawlerWindowsApplication.msi
-            SetupJobCrawlerWindowsApplication\Release\Setup.exe
+                    SetupJobCrawlerWindowsApplication\${{ github.event.inputs.build-config || 'Release' }}/*.msi
+                    SetupJobCrawlerWindowsApplication\${{ github.event.inputs.build-config || 'Release' }}/*.exe
