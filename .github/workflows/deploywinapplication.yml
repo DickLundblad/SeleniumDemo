@@ -6,12 +6,16 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    
+permissions:
+ contents: write
+ actions: write
 
 jobs:
-  build:
-    runs-on: windows-latest  # Windows runner required for MSBuild
+ build:
 
-    steps:
+  runs-on: windows-latest  # Windows runner required for MSBuild
+  steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
