@@ -38,28 +38,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Visual Studio
+        uses: actions/setup-vs@v1
+        with:
+          vs-version: '17.0'  # VS 2022
+
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1
 
-      - name: Install Visual Studio Installer Projects extension
+      - name: Install VS Installer Projects
         run: |
+          # Find VSIXInstaller path (VS 2022 default location)
+          $vsixPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe"
+          
+          # Download the extension
           $vsixUrl = "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage"
           $installer = "$env:RUNNER_TEMP\VSInstallerProjects.vsix"
           Invoke-WebRequest -Uri $vsixUrl -OutFile $installer
-          Start-Process -Wait -FilePath "VSIXInstaller.exe" -ArgumentList "/q /a $installer"
+          
+          # Install with full path
+          & "$vsixPath" /q /a $installer
 
-      - name: Build installer project
+      - name: Build installer
         run: |
           msbuild "$env:INSTALLER_PROJECT" `
             /p:Configuration=${{ github.event.inputs.build-config || 'Release' }} `
-            /p:Platform=${{ github.event.inputs.platform || 'x64' }} `
+            /p:Platform=x64 `
             /p:DeployOnBuild=true `
             /p:CreatePackageOnPublish=true
 
-      - name: Upload installer artifact
-        uses: actions/upload-artifact@v4  # Updated to v4
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: WindowsInstaller
-          path: |
-            SetupJobCrawlerWindowsApplication\${{ github.event.inputs.build-config || 'Release' }}/*.msi
-            SetupJobCrawlerWindowsApplication\${{ github.event.inputs.build-config || 'Release' }}/*.exe
+          name: Installer
+          path: SetupJobCrawlerWindowsApplication\${{ github.event.inputs.build-config || 'Release' }}/*.msi
