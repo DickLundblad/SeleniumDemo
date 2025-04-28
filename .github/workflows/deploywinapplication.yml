@@ -1,0 +1,25 @@
+﻿name: Build Windows Installer
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest  # Windows runner required for MSBuild
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1  # Ensures MSBuild is available
+
+      - name: Restore NuGet packages
+        run: nuget restore YourSolution.sln  # Only if using NuGet
+
+      - name: Build .vdproj (Legacy VS Installer Project)
+        run: |
+          msbuild "SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj" /p:Configuration=Release /p:Platform=x64

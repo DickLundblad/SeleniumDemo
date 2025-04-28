@@ -1,4 +1,4 @@
-﻿name: Build and Deploy WPF Application
+﻿﻿name: Build and Deploy WPF Application
 
 on:
   push:
