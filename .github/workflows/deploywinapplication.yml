@@ -1,30 +1,48 @@
-﻿﻿# This workflow will build a installation project for a Windows application using MSBuild. It assumes you have a Visual Studio Installer Project (.vdproj) in your solution.
-name: Build Windows Installer
+name: Build Windows Installer Package
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-    
-permissions:
- contents: write
- actions: write
 
 jobs:
- build:
+  build-installer:
+    runs-on: windows-latest
+    env:
+      SOLUTION_FILE: 'YourSolution.sln'  # Update to your solution file
+      INSTALLER_PROJECT: 'SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj'
 
-  runs-on: windows-latest  # Windows runner required for MSBuild
-  steps:
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1  # Ensures MSBuild is available
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Install Visual Studio Installer Projects extension
+        run: |
+          # Download and install the VS Installer Projects extension
+          $vsixUrl = "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage"
+          $installer = "$env:RUNNER_TEMP\VSInstallerProjects.vsix"
+          Invoke-WebRequest -Uri $vsixUrl -OutFile $installer
+          Start-Process -Wait -FilePath "VSIXInstaller.exe" -ArgumentList "/q /a $installer"
 
       - name: Restore NuGet packages
-        run: nuget restore YourSolution.sln  # Only if using NuGet
+        run: nuget restore $env:SOLUTION_FILE
 
-      - name: Build .vdproj (Legacy VS Installer Project)
+      - name: Build installer project
         run: |
-          msbuild "SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj" /p:Configuration=Release /p:Platform=x64
+          msbuild "$env:INSTALLER_PROJECT" `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:DeployOnBuild=true `
+            /p:CreatePackageOnPublish=true
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: WindowsInstaller
+          path: |
+            SetupJobCrawlerWindowsApplication\Release\SetupJobCrawlerWindowsApplication.msi
+            SetupJobCrawlerWindowsApplication\Release\Setup.exe
