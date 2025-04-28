@@ -27,8 +27,11 @@ jobs:
         
     - name: Build Deployment Project
       run: |
-        # Build the setup project (assuming it's a Visual Studio Installer Project)
-        msbuild "SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj" /p:Configuration=Release /p:Platform=x64
+        # Install Visual Studio Installer Projects extension if needed
+        choco install visualstudio2022-workload-vctools --package-parameters "--add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended"
+    
+        # Build the setup project using MSBuild
+        msbuild "SetupJobCrawlerWindowsApplication\SetupWindowsApplication.vdproj" /p:Configuration=Release /p:Platform=x64 /p:VisualStudioVersion=17.0
         
     - name: Create artifacts directory
       run: mkdir artifacts
