@@ -38,30 +38,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Visual Studio
-        uses: actions/setup-vs@v1
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
         with:
-          vs-version: '17.0'  # VS 2022
+          dotnet-version: '6.0.x'  # Adjust to your project's version
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1
-
-      - name: Install VS Installer Projects
+      - name: Find MSBuild Path
+        id: find-msbuild
         run: |
-          # Find VSIXInstaller path (VS 2022 default location)
-          $vsixPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe"
-          
-          # Download the extension
+          $vsPath = &"${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+          $msbuildPath = "$vsPath\MSBuild\Current\Bin\MSBuild.exe"
+          echo "MSBuild path: $msbuildPath"
+          echo "msbuild-path=$msbuildPath" >> $env:GITHUB_OUTPUT
+
+      - name: Install VS Installer Projects Extension
+        run: |
           $vsixUrl = "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/1.0.0/vspackage"
           $installer = "$env:RUNNER_TEMP\VSInstallerProjects.vsix"
           Invoke-WebRequest -Uri $vsixUrl -OutFile $installer
           
-          # Install with full path
-          & "$vsixPath" /q /a $installer
+          $vsixInstaller = &"${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath | Join-Path -ChildPath "Common7\IDE\VSIXInstaller.exe"
+          & "$vsixInstaller" /q /a $installer
 
       - name: Build installer
         run: |
-          msbuild "$env:INSTALLER_PROJECT" `
+          "${{ steps.find-msbuild.outputs.msbuild-path }}" "$env:INSTALLER_PROJECT" `
             /p:Configuration=${{ github.event.inputs.build-config || 'Release' }} `
             /p:Platform=x64 `
             /p:DeployOnBuild=true `
