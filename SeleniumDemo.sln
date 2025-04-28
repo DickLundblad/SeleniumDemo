@@ -7,14 +7,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCrawlerTests", "WebCrawl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCrawler", "WebCrawler\WebCrawler.csproj", "{2C99795A-AC5D-00E3-EB49-DD4507DBE63F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JobCrawlerMauiApp", "JobCrawlerMauiApp\JobCrawlerMauiApp.csproj", "{D972FE0A-D799-DCC9-0EED-64E7B9389069}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
 		Readme.md = Readme.md
 	EndProjectSection
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupWindowsApplication", "SetupWindowsApplication\SetupWindowsApplication.vdproj", "{EDC5E1DD-2BE8-61B3-8967-C618E1C1885E}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupJobCrawlerWindowsApplication", "SetupWindowsApplication\SetupWindowsApplication.vdproj", "{EDC5E1DD-2BE8-61B3-8967-C618E1C1885E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JobCrawlerWpfApp", "JobCrawlerWpfApp\JobCrawlerWpfApp.csproj", "{A1E5734D-A25C-449B-BD66-836A0C26E14F}"
 EndProject
@@ -32,12 +30,6 @@ Global
 		{2C99795A-AC5D-00E3-EB49-DD4507DBE63F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C99795A-AC5D-00E3-EB49-DD4507DBE63F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C99795A-AC5D-00E3-EB49-DD4507DBE63F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D972FE0A-D799-DCC9-0EED-64E7B9389069}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D972FE0A-D799-DCC9-0EED-64E7B9389069}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D972FE0A-D799-DCC9-0EED-64E7B9389069}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{D972FE0A-D799-DCC9-0EED-64E7B9389069}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D972FE0A-D799-DCC9-0EED-64E7B9389069}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D972FE0A-D799-DCC9-0EED-64E7B9389069}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{EDC5E1DD-2BE8-61B3-8967-C618E1C1885E}.Debug|Any CPU.ActiveCfg = Debug
 		{EDC5E1DD-2BE8-61B3-8967-C618E1C1885E}.Release|Any CPU.ActiveCfg = Release
 		{A1E5734D-A25C-449B-BD66-836A0C26E14F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
