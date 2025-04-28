@@ -23,7 +23,7 @@ jobs:
       
     - name: Build WPF Application (Release)
       run: |
-        dotnet build "JobCrawlerWpfApp.csproj" --configuration Release -p:Platform=x64 -p:DeployOnBuild=true -p:PublishProfile=FolderProfile
+        dotnet build "JobCrawlerWpfApp\JobCrawlerWpfApp.csproj" --configuration Release -p:Platform=x64 -p:DeployOnBuild=true -p:PublishProfile=FolderProfile
         
     - name: Build Deployment Project
       run: |
