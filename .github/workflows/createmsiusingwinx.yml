@@ -30,9 +30,6 @@ permissions:
 jobs:
   build-installer:
     runs-on: windows-latest
-    env:
-      SOLUTION_FILE: 'SeleniumDemo.sln'  # Update to your solution file
-      INSTALLER_PROJECT: 'SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj'
 
     steps:
       - name: Checkout code
@@ -42,7 +39,7 @@ jobs:
            ls ${{ github.workspace }}
       - name: Build WiX Installer
         run: |
-            dotnet publish "JobCrawlerWindowsApplication.csproj" -c Release -r win-x64
+            dotnet publish "JobCrawlerWpfApp/JobCrawlerWpfApp.csproj" -c Release -r win-x64
             cd SetupJobCrawlerWindowsApplication
             heat dir ../bin/Release/net9.0-windows/win-x64/publish -cg ApplicationFiles -gg -sfrag -template fragment -out Files.wxs
             candle Files.wxs Product.wxs
