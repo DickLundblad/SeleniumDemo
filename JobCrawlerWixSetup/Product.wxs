@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*"
+             Name="Your WPF Application"
+             Language="1033"
+             Version="1.0.0.0"
+             Manufacturer="Your Company"
+             UpgradeCode="110e2845-606e-4d60-9a56-c410031fabe6">
+
+        <Package InstallerVersion="200"
+                 Compressed="yes"
+                 InstallScope="perMachine" />
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+        <MediaTemplate EmbedCab="yes" />
+
+        <!-- Application icon -->
+        <!-- <Icon Id="ApplicationIcon" SourceFile="YourApp.ico"/>
+        <Property Id="ARPPRODUCTICON" Value="ApplicationIcon" />
+
+        <!- UI configuration -->
+        <!-- <UIRef Id="WixUI_InstallDir" />-->
+        <!--<Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />-->
+
+        <!-- Directory structure -->
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFilesFolder">
+                <Directory Id="INSTALLFOLDER" Name="Your WPF Application">
+                    <!-- Files will be added here -->
+                </Directory>
+            </Directory>
+            <Directory Id="ProgramMenuFolder">
+                <Directory Id="ApplicationProgramsFolder" Name="Your WPF Application"/>
+            </Directory>
+        </Directory>
+
+        <!-- Components -->
+        <DirectoryRef Id="INSTALLFOLDER">
+            <!-- This will be populated automatically -->
+        </DirectoryRef>
+
+        <!-- Start menu shortcuts -->
+        <DirectoryRef Id="ApplicationProgramsFolder">
+            <Component Id="ApplicationShortcut" Guid="b7377ba1-d023-4793-9f57-6ca151898916">
+                <Shortcut Id="ApplicationStartMenuShortcut"
+                          Name="Your WPF Application"
+                          Description="Your application description"
+                          Target="[INSTALLFOLDER]YourApp.exe"
+                          WorkingDirectory="INSTALLFOLDER"/>
+                <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+                <RegistryValue Root="HKCU" Key="Software\YourCompany\YourApp"
+                               Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+            </Component>
+        </DirectoryRef>
+
+        <Feature Id="ProductFeature" Title="Your WPF Application" Level="1">
+            <ComponentRef Id="ApplicationShortcut" />
+            <!-- References to other components will go here -->
+        </Feature>
+    </Product>
+</Wix>

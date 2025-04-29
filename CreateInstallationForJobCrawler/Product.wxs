@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Name="Job Crawler" Language="1033"
+             Version="1.0.0.0" Manufacturer="Your Company"
+             UpgradeCode="4875ce13-5886-4539-983f-601702e83a6b">
+
+        <Package InstallerVersion="200" Compressed="yes"
+                 InstallScope="perMachine"/>
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version is already installed."/>
+        <MediaTemplate EmbedCab="yes"/>
+
+        <Feature Id="ProductFeature" Title="Job Crawler" Level="1">
+            <ComponentGroupRef Id="ProductComponents"/>
+        </Feature>
+    </Product>
+
+    <Fragment>
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFilesFolder">
+                <Directory Id="INSTALLFOLDER" Name="Job Crawler"/>
+            </Directory>
+        </Directory>
+    </Fragment>
+
+    <Fragment>
+        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+            <!-- Files will be added here automatically -->
+        </ComponentGroup>
+    </Fragment>
+</Wix>

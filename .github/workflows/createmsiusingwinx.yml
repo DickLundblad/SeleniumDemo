@@ -1,0 +1,49 @@
+name: Build Windows Installer Package using WIX
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:    # Allows manual triggering
+    inputs:
+      build-config:
+        description: 'Build Configuration'
+        type: choice
+        options:
+          - Release
+          - Debug
+        default: 'Release'
+      platform:
+        description: 'Target Platform'
+        type: choice
+        options:
+          - x64
+          - x86
+        default: 'x64'
+
+permissions:
+  contents: read
+  actions: read
+  packages: write
+
+jobs:
+  build-installer:
+    runs-on: windows-latest
+    env:
+      SOLUTION_FILE: 'SeleniumDemo.sln'  # Update to your solution file
+      INSTALLER_PROJECT: 'SetupJobCrawlerWindowsApplication\SetupJobCrawlerWindowsApplication.vdproj'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: List files in the repository
+        run: |
+           ls ${{ github.workspace }}
+      - name: Build WiX Installer
+        run: |
+            dotnet publish "JobCrawlerWindowsApplication.csproj" -c Release -r win-x64
+            cd SetupJobCrawlerWindowsApplication
+            heat dir ../bin/Release/net9.0-windows/win-x64/publish -cg ApplicationFiles -gg -sfrag -template fragment -out Files.wxs
+            candle Files.wxs Product.wxs
+            light -ext WixUIExtension -out JobCrawlerSetup.msi Files.wixobj Product.wixobj
