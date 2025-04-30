@@ -5,140 +5,99 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:JobCrawlerWpfApp"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="JobCrawler" Height="700" Width="1000">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="200"/>
         </Grid.RowDefinitions>
-        <StackPanel Margin="20">
-            <Button Content="Load Crawl Info" Width="130" Click="Button_Crawl_Info_Click"/>
-            <Button Content="Start Chrome In Debug" Width="130" Click="Button_Chrome_Debug_Click"/>
-            <Button Content="Crawl Selected Sites" Width="130" Click="Button_Start_Crawl_Click"/>
-            <TextBlock x:Name="StatusLabel" Margin="0,20,0,0" TextWrapping="Wrap"/>
+
+        <!-- Action Buttons Section -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <Button Content="Reload Crawl Info" Width="130" Margin="5" Click="Button_Crawl_Info_Click"/>
+            <Button Content="Start Chrome In Debug" Width="130" Margin="5" Click="Button_Chrome_Debug_Click"/>
+            <Button Content="Crawl Selected Sites" Width="130" Margin="5" Click="Button_Start_Crawl_Click"/>
         </StackPanel>
-        <DataGrid x:Name="CsvDataGrid" Grid.Row="1" Margin="5" AutoGenerateColumns="False">
+
+        <!-- Status Section -->
+        <StackPanel Grid.Row="1" Margin="10,0,10,10">
+            <TextBlock x:Name="StatusLabel" Margin="0,0,0,5" TextWrapping="Wrap"/>
+            <TextBlock Text="To use Chat GPT, please add .env file to same folder where application was installed" 
+                       FontStyle="Italic" Margin="0,5,0,0"/>
+        </StackPanel>
+
+        <!-- Main Data Grid Section -->
+        <DataGrid x:Name="CsvDataGrid" Grid.Row="2" Margin="10,0,10,10" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <!-- Checkbox column -->
                 <DataGridTemplateColumn Header="Select" Width="Auto">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                              Click="CheckBox_Click"
+                                      Click="CheckBox_Click"
                                       HorizontalAlignment="Center"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Fixed columns for CSV data -->
-                <DataGridTextColumn Header="Url" Binding="{Binding Url}" Width="*" >
+                <!-- Data columns with tooltips -->
+                <DataGridTextColumn Header="Url" Binding="{Binding Url}" Width="2*">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="ToolTip">
-                                <Setter.Value>
-                                    <ToolTip>
-                                        <StackPanel>
-                                            <TextBlock Text="XPath Selector:" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding Url}"/>
-                                            <TextBlock Text="URL for startpage to open and parse for links" FontStyle="Italic"/>
-                                        </StackPanel>
-                                    </ToolTip>
-                                </Setter.Value>
-                            </Setter>
+                            <Setter Property="ToolTip" Value="{Binding Url}"/>
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="SelectorXPathForJobEntry" Binding="{Binding SelectorXPathForJobEntry}" Width="*">
+
+                <DataGridTextColumn Header="XPath Selector" Binding="{Binding SelectorXPathForJobEntry}" Width="2*">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="ToolTip">
-                                <Setter.Value>
-                                    <ToolTip>
-                                        <StackPanel>
-                                            <TextBlock Text="XPath Selector:" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding SelectorXPathForJobEntry}"/>
-                                            <TextBlock Text="Used to identify job entries on the page" FontStyle="Italic"/>
-                                        </StackPanel>
-                                    </ToolTip>
-                                </Setter.Value>
-                            </Setter>
+                            <Setter Property="ToolTip" Value="{Binding SelectorXPathForJobEntry}"/>
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="FileName" Binding="{Binding FileName}" Width="*">
+
+                <DataGridTextColumn Header="File Name" Binding="{Binding FileName}" Width="1*">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="ToolTip">
-                                <Setter.Value>
-                                    <ToolTip>
-                                        <StackPanel>
-                                            <TextBlock Text="XPath Selector:" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding FileName}"/>
-                                            <TextBlock Text="File name for result file" FontStyle="Italic"/>
-                                        </StackPanel>
-                                    </ToolTip>
-                                </Setter.Value>
-                            </Setter>
+                            <Setter Property="ToolTip" Value="{Binding FileName}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="AddDomainToJobPaths" Binding="{Binding AddDomainToJobPaths}" Width="*">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="ToolTip">
-                                <Setter.Value>
-                                    <ToolTip>
-                                        <StackPanel>
-                                            <TextBlock Text="XPath Selector:" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding AddDomainToJobPaths}"/>
-                                            <TextBlock Text="Add domain to joblinks" FontStyle="Italic"/>
-                                        </StackPanel>
-                                    </ToolTip>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="DelayUserInteraction" Binding="{Binding DelayUserInteraction}" Width="*">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="ToolTip">
-                                <Setter.Value>
-                                    <ToolTip>
-                                        <StackPanel>
-                                            <TextBlock Text="XPath Selector:" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding DelayUserInteraction}"/>
-                                            <TextBlock Text="Delay each call to open page or links" FontStyle="Italic"/>
-                                        </StackPanel>
-                                    </ToolTip>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="RemoveParamsInJobLinks" Binding="{Binding RemoveParamsInJobLinks}" Width="*">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="ToolTip">
-                                <Setter.Value>
-                                    <ToolTip>
-                                        <StackPanel>
-                                            <TextBlock Text="XPath Selector:" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding RemoveParamsInJobLinks}"/>
-                                            <TextBlock Text="Remove parameters from joblinks found on start URl" FontStyle="Italic"/>
-                                        </StackPanel>
-                                    </ToolTip>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
+
+                <DataGridCheckBoxColumn Header="Add Domain" Binding="{Binding AddDomainToJobPaths}" Width="0.75*"/>
+
+                <DataGridTextColumn Header="Delay (ms)" Binding="{Binding DelayUserInteraction}" Width="0.75*"/>
+
+                <DataGridCheckBoxColumn Header="Remove Params" Binding="{Binding RemoveParamsInJobLinks}" Width="0.75*"/>
             </DataGrid.Columns>
         </DataGrid>
-        <StackPanel>
-            <TextBlock Text="To use Chat GPT, please add .env file to same folder where application was installed" />
-            <TextBlock Text="-" />
-        </StackPanel>
-    </Grid>
 
+        <!-- Path Selection (now below main grid) -->
+        <DockPanel Grid.Row="3" Margin="10,0,10,5">
+            <TextBlock DockPanel.Dock="Left" Text="Working Directory:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox x:Name="PathTextBox" Margin="0,0,5,0"/>
+            <Button Content="OpenFolder" Width="75" Click="OpenFolderButton_Click"/>
+            <Button Content="Refresh" Width="75" Click="RefreshButton_Click"/>
+        </DockPanel>
+
+        <!-- Folder Browser Section -->
+        <GroupBox Grid.Row="4" Header="Folder Contents" Margin="10">
+            <ListView x:Name="FolderContentsListView">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="200"/>
+                        <GridViewColumn Header="Type" DisplayMemberBinding="{Binding Type}" Width="100"/>
+                        <GridViewColumn Header="Size" DisplayMemberBinding="{Binding Size}" Width="100"/>
+                        <GridViewColumn Header="Modified" DisplayMemberBinding="{Binding ModifiedDate}" Width="150"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </GroupBox>
+    </Grid>
 </Window>

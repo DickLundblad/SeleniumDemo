@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System;
 using System.Windows.Controls;
+using System.Diagnostics;
 
 
 namespace JobCrawlerWpfApp
@@ -53,7 +54,7 @@ namespace JobCrawlerWpfApp
         public ObservableCollection<CrawlItem> CsvData { get; } = new ObservableCollection<CrawlItem>();
         private JobListingsApi _api;
         private const string FixedCsvPath = @"Resources/JobCrawlSites.csv";
-
+        private const string FixedResultFolderPath = @"JobListings";
         const char RESULT_FILE_COLUMN_SEPARATOR = ';';
         
         public MainWindow()
@@ -61,6 +62,9 @@ namespace JobCrawlerWpfApp
             InitializeComponent();
             DataContext = this;
             CsvDataGrid.ItemsSource = CsvData;
+            LoadCsvData(FixedCsvPath, RESULT_FILE_COLUMN_SEPARATOR);
+            LoadFolderContents(Environment.CurrentDirectory + "/" + FixedResultFolderPath);
+            PathTextBox.Text = Environment.CurrentDirectory + "/" + FixedResultFolderPath;
         }
 
         private void Button_Crawl_Info_Click(object sender, RoutedEventArgs e)
@@ -105,7 +109,7 @@ namespace JobCrawlerWpfApp
             {
                 DisplayAlert($"no sites selected, please select some");
             }else
-
+            {
                 foreach (var data in selectedItems)
                 {
                     var timeout = TimeSpan.FromMinutes(2);
@@ -134,11 +138,13 @@ namespace JobCrawlerWpfApp
                         StatusLabel.Text = "Error: " + ex.Message;
                     }
                 }
+                LoadFolderContents();
+            }
         }
 
         private void DisplayAlert(string message)
         {
-            StatusLabel.Text = message;
+            MessageBox.Show(message);
         }
 
         private void LoadCsvData(string filePath, char separator)
@@ -168,6 +174,73 @@ namespace JobCrawlerWpfApp
                 CsvData.Add(item);
             }
         }
+    private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(FixedResultFolderPath) && Directory.Exists(FixedResultFolderPath))
+        {
+            Process.Start("explorer.exe", FixedResultFolderPath);
+        }
+        else
+        {
+            MessageBox.Show("Folder path is invalid or doesn't exist", "Error", 
+                           MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void RefreshButton_Click(object sender, RoutedEventArgs e)
+    {
+        LoadFolderContents();
+    }
+
+    private void LoadFolderContents(string path = "")
+    {
+        try
+        {
+            FolderContentsListView.Items.Clear();
+            if (path == string.Empty)
+            {
+                path = PathTextBox.Text;
+            }
+            
+            if (!Directory.Exists(path))
+            {
+                MessageBox.Show("Directory does not exist!");
+                return;
+            }
+
+            // Add directories
+            foreach (var dir in Directory.GetDirectories(path))
+            {
+                var dirInfo = new DirectoryInfo(dir);
+                FolderContentsListView.Items.Add(new FolderItem
+                {
+                    Name = dirInfo.Name,
+                    Type = "Folder",
+                    Size = "",
+                    ModifiedDate = dirInfo.LastWriteTime.ToString(),
+                    FullPath = dirInfo.FullName
+                });
+            }
+
+            // Add files
+            foreach (var file in Directory.GetFiles(path))
+            {
+                var fileInfo = new FileInfo(file);
+                FolderContentsListView.Items.Add(new FolderItem
+                {
+                    Name = fileInfo.Name,
+                    Type = fileInfo.Extension.ToUpper().TrimStart('.') + " File",
+                    Size = $"{Math.Ceiling(fileInfo.Length / 1024.0):0} KB", // Rounded up KB
+                    ModifiedDate = fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm"),
+                    FullPath = fileInfo.FullName
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error loading folder: {ex.Message}");
+        }
+    }
         public class CrawlProgressReport
         {
             public string Message { get; }
@@ -179,5 +252,13 @@ namespace JobCrawlerWpfApp
                 Percentage = percentage;
             }
        }
+        public class FolderItem
+        {
+            public string Name { get; set; }
+            public string Type { get; set; }
+            public string Size { get; set; }
+            public string ModifiedDate { get; set; }
+            public string FullPath { get; set; }
+        }
      }
 }
