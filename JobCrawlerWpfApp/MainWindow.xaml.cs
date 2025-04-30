@@ -53,7 +53,7 @@ namespace JobCrawlerWpfApp
 
         public ObservableCollection<CrawlItem> CsvData { get; } = new ObservableCollection<CrawlItem>();
         private JobListingsApi _api;
-        private const string FixedCsvPath = @"Resources/JobCrawlSites.csv";
+        private const string FixedCsvPath = @"Resources\JobCrawlSites.csv";
         private const string FixedResultFolderPath = @"JobListings";
         const char RESULT_FILE_COLUMN_SEPARATOR = ';';
         
