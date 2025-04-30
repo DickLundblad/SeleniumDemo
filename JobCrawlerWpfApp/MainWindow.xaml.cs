@@ -25,7 +25,6 @@ namespace JobCrawlerWpfApp
     {
         public class CrawlItem : INotifyPropertyChanged
         {
-
             private bool _isSelected;
             public bool IsSelected     
             {
@@ -59,31 +58,28 @@ namespace JobCrawlerWpfApp
         
         public MainWindow()
         {
-
             InitializeComponent();
-            //IWebDriver driverToUse = ChromeDebugger.StartChromeInDebugMode();
-            //_api  = new JobListingsApi(driverToUse);
-            //LoadSitesToCrawl();
             DataContext = this;
             CsvDataGrid.ItemsSource = CsvData;
-            //StatusLabel.Text = "Ready";
         }
 
         private void Button_Crawl_Info_Click(object sender, RoutedEventArgs e)
         {
-            StatusLabel.Text = "Button clicked at " + DateTime.Now.ToString();
+            StatusLabel.Text = $"Loaded info about sites to crawl from: {FixedCsvPath}";
 
             // Load and display CSV data
            LoadCsvData(FixedCsvPath, RESULT_FILE_COLUMN_SEPARATOR);
         }
         private void Button_Chrome_Debug_Click(object sender, RoutedEventArgs e)
         {
+            StatusLabel.Text = "Opened Chrome in Debug";
             IWebDriver driverToUse = ChromeDebugger.StartChromeInDebugMode();
             _api  = new JobListingsApi(driverToUse);
         }
 
         private void Button_Start_Crawl_Click(object sender, RoutedEventArgs e)
         {
+            StatusLabel.Text = "Begin Crawling";
             LoadSitesToCrawl();
         }
 
@@ -105,34 +101,44 @@ namespace JobCrawlerWpfApp
         { 
             List<CrawlItem> selectedItems = CsvData.Where(item => item.IsSelected).ToList();
             
-            foreach (var data in selectedItems)
+            if(selectedItems.Count == 0)
             {
-                var timeout = TimeSpan.FromMinutes(2);
-                try
+                DisplayAlert($"no sites selected, please select some");
+            }else
+
+                foreach (var data in selectedItems)
                 {
-                    StatusLabel.Text = "Crawling " + data.Url;
-                    //await _api.CrawlWithProgressAsync(data.Url, data.SelectorXPathForJobEntry, data.FileName, progress, data.AddDomainToJobPaths, data.DelayUserInteraction, data.RemoveParamsInJobLinks);
- 
-                    //var progress = new Progress<CrawlProgressReport>(async report =>
-                    //{
-                    //    await MainThread.InvokeOnMainThreadAsync(() =>
-                    //    {
-                    //        ProgressBar.Progress = report.Percentage / 100.0; // MAUI uses 0.0-1.0 range
-                    //        ProgressLabel.Text = report.Message;
-                    //    });
-            
-                    //    Console.WriteLine(report.Message);
-                    //});
-                    var progress = new Progress<CrawlProgressReport>();
-                    _api.CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(data.Url, data.SelectorXPathForJobEntry, data.FileName, data.AddDomainToJobPaths, data.DelayUserInteraction, data.RemoveParamsInJobLinks);
-                    //await _api.CrawlWithProgressAsync(data.Url, data.SelectorXPathForJobEntry, data.FileName, progress,data.AddDomainToJobPaths, data.DelayUserInteraction, data.RemoveParamsInJobLinks);
-                    StatusLabel.Text = "Crawled " + data.FileName;
+                    var timeout = TimeSpan.FromMinutes(2);
+                    try
+                    {
+                        StatusLabel.Text = "Crawling " + data.Url;
+                        //await _api.CrawlWithProgressAsync(data.Url, data.SelectorXPathForJobEntry, data.FileName, progress, data.AddDomainToJobPaths, data.DelayUserInteraction, data.RemoveParamsInJobLinks);
+
+                        //var progress = new Progress<CrawlProgressReport>(async report =>
+                        //{
+                        //    await MainThread.InvokeOnMainThreadAsync(() =>
+                        //    {
+                        //        ProgressBar.Progress = report.Percentage / 100.0; // MAUI uses 0.0-1.0 range
+                        //        ProgressLabel.Text = report.Message;
+                        //    });
+
+                        //    Console.WriteLine(report.Message);
+                        //});
+                        var progress = new Progress<CrawlProgressReport>();
+                        _api.CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(data.Url, data.SelectorXPathForJobEntry, data.FileName, data.AddDomainToJobPaths, data.DelayUserInteraction, data.RemoveParamsInJobLinks);
+                        //await _api.CrawlWithProgressAsync(data.Url, data.SelectorXPathForJobEntry, data.FileName, progress,data.AddDomainToJobPaths, data.DelayUserInteraction, data.RemoveParamsInJobLinks);
+                        StatusLabel.Text = "Crawled " + data.FileName;
+                    }
+                    catch (Exception ex)
+                    {
+                        StatusLabel.Text = "Error: " + ex.Message;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    StatusLabel.Text = "Error: " + ex.Message;
-                }
-            }
+        }
+
+        private void DisplayAlert(string message)
+        {
+            StatusLabel.Text = message;
         }
 
         private void LoadCsvData(string filePath, char separator)
