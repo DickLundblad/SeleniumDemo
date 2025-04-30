@@ -1,14 +1,12 @@
 ﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
-  <Bundle Id="TODO_Manufacturer.WixTutorialPackage" Name="WixTutorialPackage" Manufacturer="TODO Manufacturer" Version="1.0.0.0">
+  <Bundle Id="TODO_Manufacturer.WixTutorialPackage" Name="WixTutorialPackage2" Manufacturer="HOT" Version="1.0.0.0" UpgradeCode="a4cc12c3-0822-4ec3-ad2f-c6ebb5fafeb7">
     <BootstrapperApplication>
       <bal:WixStandardBootstrapperApplication LicenseUrl="https://www.example.com/license" Theme="hyperlinkLicense" />
     </BootstrapperApplication>
-
     <Chain>
       <!-- TODO: Define the list of chained packages. -->
       <!-- <MsiPackage SourceFile="path\to\your.msi" /> -->
         <ExePackage Id="JobCrawlerWpfApp" SourceFile="JobCrawlerWpfApp.exe" DetectCondition="(VersionNT64 AND NOT VersionNT64=0)" UninstallArguments="" />
     </Chain>
-
   </Bundle>
 </Wix>

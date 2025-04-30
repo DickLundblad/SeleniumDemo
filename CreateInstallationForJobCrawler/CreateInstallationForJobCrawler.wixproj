@@ -2,4 +2,7 @@
   <ItemGroup>
     <Content Include="example.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JobCrawlerWpfApp\JobCrawlerWpfApp.csproj" />
+  </ItemGroup>
 </Project>

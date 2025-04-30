@@ -7,5 +7,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\JobCrawlerWpfApp\JobCrawlerWpfApp.csproj" />
-  </ItemGroup>
+  </ItemGroup> 
 </Project>

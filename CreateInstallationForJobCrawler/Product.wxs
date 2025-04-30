@@ -1,6 +1,11 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-    <Package Id="AcmeCorp.QuickStartExample" Name="QuickStart Example"
-             Manufacturer="ACME Corp" Version="0.0.1">
+    <Package Id="JobCrawler" Name="JobCrawler Example"
+             Manufacturer="Hot" Version="0.1.0">
         <File Source="example.txt" />
+        <File Source="JobCrawlerWpfApp.exe" />
+        <File Source="ClosedXML.dll" />
+        <File Source="WebCrawler.dll" />
+        <File Source="WebDriver.dll" />
     </Package>
+    
 </Wix>

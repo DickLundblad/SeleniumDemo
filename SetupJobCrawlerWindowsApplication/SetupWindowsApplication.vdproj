@@ -44,6 +44,14 @@
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
             }
         }
         "Release"
@@ -118,7 +126,7 @@
             {
             "DefaultLocation" = "8:[ProgramFilesFolder][Manufacturer]\\[ProductName]"
             "Name" = "8:#1925"
-            "AlwaysCreate" = "11:FALSE"
+            "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Property" = "8:TARGETDIR"
@@ -129,7 +137,7 @@
             "{1525181F-901A-416C-8A58-119130FE478E}:_90552117CBCA464B922EE81711B07AA7"
             {
             "Name" = "8:#1916"
-            "AlwaysCreate" = "11:FALSE"
+            "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Property" = "8:DesktopFolder"
@@ -140,7 +148,7 @@
             "{1525181F-901A-416C-8A58-119130FE478E}:_9B5E7EC82866422F932F23A021731EDC"
             {
             "Name" = "8:#1919"
-            "AlwaysCreate" = "11:FALSE"
+            "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Property" = "8:ProgramMenuFolder"
@@ -165,7 +173,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:JobCrawler"
         "ProductCode" = "8:{381554D4-0CE9-4051-8A51-D7B098295EEB}"
-        "PackageCode" = "8:{523AC8C1-4E66-4945-8FFB-F3113AF3EAB8}"
+        "PackageCode" = "8:{4BB36ABA-E0C0-42DE-BE48-245E86FE0304}"
         "UpgradeCode" = "8:{EACF720A-C2A3-4AD4-97FD-53C874B5E2C8}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -285,6 +293,34 @@
         }
         "Shortcut"
         {
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_C8B782C0721B40F2A50BA6DEEF251318"
+            {
+            "Name" = "8:JobCrawler"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_F9749B26F1E84E0583E68963B68D762E"
+            "Folder" = "8:_9B5E7EC82866422F932F23A021731EDC"
+            "WorkingFolder" = "8:_8ED401991D774DAE853826D9C7CEBC96"
+            "Icon" = "8:"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_EF5D2EE0C80E4BA4B6A502FB6770E9CB"
+            {
+            "Name" = "8:JobCrawler"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_F9749B26F1E84E0583E68963B68D762E"
+            "Folder" = "8:_90552117CBCA464B922EE81711B07AA7"
+            "WorkingFolder" = "8:_8ED401991D774DAE853826D9C7CEBC96"
+            "Icon" = "8:"
+            "Feature" = "8:"
+            }
         }
         "UserInterface"
         {
@@ -686,7 +722,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F9749B26F1E84E0583E68963B68D762E"
             {
-            "SourcePath" = "8:..\\JobCrawlerWpfApp\\obj\\Release\\net9.0-windows\\apphost.exe"
+            "SourcePath" = "8:..\\JobCrawlerWpfApp\\obj\\Release\\net9.0-windows10.0.17763.0\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_8ED401991D774DAE853826D9C7CEBC96"
