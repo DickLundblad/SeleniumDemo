@@ -179,34 +179,34 @@ namespace JobCrawlerWpfApp
         private void LoadSitesToCrawl(CancellationToken cancellationToken)
         {
             var selectedItems = CsvDataGrid.ItemsSource
-                .Cast<CrawlItem>()  // Replace with your actual data type
+                .Cast<CrawlItem>()
                 .Where(item => item.IsSelected)
                 .ToList();
-             if(selectedItems.Count == 0)
+            
+            if(selectedItems.Count == 0)
             {
                 DisplayAlert($"no sites selected, please select some");
             }else
             {
                 foreach (var site in selectedItems)
-            {
-                // Check for cancellation before processing each site
-                cancellationToken.ThrowIfCancellationRequested();
-
-                AppendStatus($"Processing: {site.Url}");
-        
-                try
                 {
-                    AppendStatus($"Begin to crawl {site.Url}");
+                    // Check for cancellation before processing each site
                     cancellationToken.ThrowIfCancellationRequested();
-                    var returnMessage = _api.CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(site.Url, site.SelectorXPathForJobEntry, site.FileName, site.AddDomainToJobPaths, site.DelayUserInteraction, site.RemoveParamsInJobLinks, cancellationToken);
-                    AppendStatus($"Done crawling site {site.Url}, {returnMessage}");
+
+                    AppendStatus($"Processing: {site.Url}");
+        
+                    try
+                    {
+                        AppendStatus($"Begin to crawl {site.Url}");
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var returnMessage = _api.CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(site.Url, site.SelectorXPathForJobEntry, site.FileName, site.AddDomainToJobPaths, site.DelayUserInteraction, site.RemoveParamsInJobLinks, cancellationToken);
+                        AppendStatus($"Done crawling site {site.Url}, {returnMessage}");
+                    }
+                    catch (Exception ex) when (!(ex is OperationCanceledException))
+                    {
+                        AppendStatus($"Error crawling {site.Url}: {ex.Message}");
+                    }   
                 }
-                catch (Exception ex) when (!(ex is OperationCanceledException))
-                {
-                    AppendStatus($"Error crawling {site.Url}: {ex.Message}");
-                }
-                
-            }
             }
         }
 

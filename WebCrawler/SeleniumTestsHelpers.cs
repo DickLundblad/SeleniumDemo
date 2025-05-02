@@ -95,7 +95,7 @@ namespace WebCrawler
         /// <param name="newList"></param>
         /// <param name="existingList"></param>
         /// <returns></returns>
-        public static List<JobListing> MergeJobListings(List<JobListing> newList, List<JobListing> existingList)
+        public static List<JobListing> MergeJobListingsIgnoreAlreadyExisting(List<JobListing> newList, List<JobListing> existingList)
         {
             return newList
                 .Where(newJob => !existingList.Any(existingJob => existingJob.JobLink == newJob.JobLink))
@@ -103,7 +103,35 @@ namespace WebCrawler
                 .ToList();
         }
 
-        public static List<JobListing> ExtractNewJobListings(List<JobListing> newList, List<JobListing> existingList)
+        /// <summary>
+        /// lines where JobLink are the same, the new list items should overwrite the existing
+        /// </summary>
+        /// <param name="newList"></param>
+        /// <param name="existingList"></param>
+        /// <returns></returns>
+        public static List<JobListing> MergeJobListingsOverWriteAlreadyExisting(List<JobListing> newList, List<JobListing> existingList)
+        {
+            return newList
+                .Where(newJob => !existingList.Any(existingJob => existingJob.JobLink == newJob.JobLink && existingJob.Refresh== false))
+                .Concat(existingList)
+                .ToList();
+        }
+
+
+        public static List<JobListing> GetJobListingsToUpdate(List<JobListing> list)
+        {
+            var resList = new List<JobListing>();
+            foreach (var job in list)
+            {
+                if( job.Refresh == true)
+                {
+                    resList.Add(job);
+                }   
+            }
+            return resList;
+        }
+
+        public static List<JobListing> ExtractUniqueJobListings(List<JobListing> newList, List<JobListing> existingList)
         {
             return newList
                 .Where(newJob => !existingList.Any(existingJob => existingJob.JobLink == newJob.JobLink))

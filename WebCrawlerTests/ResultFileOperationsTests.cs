@@ -41,6 +41,29 @@ namespace WebCrawler
         }
 
         [Test]
+        public void ReadJobListingsThatShouldBeUpdated()
+        {
+            var randomName = Guid.NewGuid().ToString(); // Generate a random name
+            var fileName = $"CreateJobListings_{randomName}";
+            var jobLink = "https://www.linkedin.com/link1";
+            var jobLink2 = "https://www.linkedin.com/link2";
+            JobListings jobListings = new JobListings(fileName);
+ 
+            var job1 = new JobListing() { JobLink = jobLink, Refresh= false};
+            var job2 = new JobListing() { JobLink = jobLink2 , Refresh= true};
+            jobListings.InsertOrUpdate(job1);
+            jobListings.InsertOrUpdate(job2);
+
+            SeleniumTestsHelpers.WriteToFile(jobListings, fileName);
+            JobListings jobListingsFromFile = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName);
+            List<JobListing> jobListingsToUpdate = SeleniumTestsHelpers.GetJobListingsToUpdate(jobListingsFromFile.JobListingsList);
+
+            Assert.That(jobListingsFromFile.JobListingsList.Count, Is.EqualTo(2), "Two jobListings was saved to file");
+            Assert.That(jobListingsToUpdate.Count, Is.EqualTo(1), "Only 1 jobListing was set to be updated");
+            Assert.That(jobListingsToUpdate.FirstOrDefault().JobLink, Is.EqualTo(jobLink2), "joblink was not correct");
+        }
+
+        [Test]
         public void UpdateJobListings()
         {
             var randomName = Guid.NewGuid().ToString(); // Generate a random name
@@ -100,5 +123,24 @@ namespace WebCrawler
             Assert.That(updatedItem, Is.EqualTo(job1).Using(new JobListingComparer()), " The re-loaded JobListing from file does not contain the same object.");
             Assert.That(updatedItem.ContactInformation, Is.EqualTo(updatedContactInformation), "The updated item did not have the correct ContactInformation");
         }
+
+        [Test]
+        public void MergeJobListingsIgnoreAlreadyExisting()
+        {
+            JobListings existingJobListings = new JobListings("newexisting");
+            JobListings newJobListings = new JobListings("fileName");
+            // existing and new  with same URL, new is ignored
+            var res = SeleniumTestsHelpers.MergeJobListingsIgnoreAlreadyExisting(existingJobListings.JobListingsList, newJobListings.JobListingsList);
+        }
+
+        [Test]
+        public void MergeJobListingsOverWriteAlreadyExisting()
+        {
+            JobListings existingJobListings = new JobListings("newexisting");
+            JobListings newJobListings = new JobListings("fileName");
+            // existing and new  with same URL, new overwrite existingif property Refresh is set to true
+            var res = SeleniumTestsHelpers.MergeJobListingsOverWriteAlreadyExisting(existingJobListings.JobListingsList, newJobListings.JobListingsList);
+        }
+        
     }
 }

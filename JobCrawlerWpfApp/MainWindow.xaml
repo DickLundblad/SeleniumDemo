@@ -17,7 +17,7 @@
 
         <!-- Action Buttons Section -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
-            <Button Content="OpenCrawlerFile" Width="130" Click="OpenFileButton_Click"/>
+            <Button Content="OpenCrawlerFile" Width="130" Margin="5" Click="OpenFileButton_Click"/>
             <Button Content="Reload Crawl Info" Width="130" Margin="5" Click="Button_Crawl_Info_Click"/>
             <Button Content="Start Chrome In Debug" Width="130" Margin="5" Click="Button_Chrome_Debug_Click"/>
             <Button Content="Crawl Selected Sites" Width="130" Margin="5" Click="Button_Start_Crawl_Click"/>

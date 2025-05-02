@@ -32,8 +32,10 @@ public class JobListingsApi
         List<JobListing> liveJobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction, removeParams, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var savedJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
-        var newJobListings = SeleniumTestsHelpers.ExtractNewJobListings(liveJobListings, savedJobListings.JobListingsList);
+        var newJobListings = SeleniumTestsHelpers.ExtractUniqueJobListings(liveJobListings, savedJobListings.JobListingsList);
+        var exisingJobLisingsToUpdate = SeleniumTestsHelpers.GetJobListingsToUpdate(savedJobListings.JobListingsList);
         string returnMessage = ""; 
+        // process new Joblinks
         if (newJobListings.Count >0)
         {
             Console.WriteLine($"Number of new job listings to open and parse: {newJobListings.Count}");
@@ -48,8 +50,9 @@ public class JobListingsApi
                 jobListing.ContactInformation = updatedJobListing.ContactInformation;
                 jobListing.Description = updatedJobListing.Description;
                 jobListing.ApplyLink = updatedJobListing.ApplyLink;
+                jobListing.Refresh = false;
             }
-            var mergedList = SeleniumTestsHelpers.MergeJobListings(newJobListings, savedJobListings.JobListingsList);
+            var mergedList = SeleniumTestsHelpers.MergeJobListingsIgnoreAlreadyExisting(newJobListings, savedJobListings.JobListingsList);
             SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
             returnMessage += $"Existing nbr of JobListings was {savedJobListings.JobListingsList.Count}, adding {newJobListings.Count}";
         }
@@ -58,6 +61,29 @@ public class JobListingsApi
             returnMessage = $"No new job listings found after comparing live with already existing jobListings on file: {fileName}";
             Console.WriteLine($"No new job listings found after comparing live with already existing jobListings on file: {fileName}");
         }
+
+        // process existing jobLinks that needs to be update
+        if (exisingJobLisingsToUpdate.Count >0)
+        {
+            Console.WriteLine($"Number of existing job listings to update: {exisingJobLisingsToUpdate.Count}");
+            foreach (var jobListing in exisingJobLisingsToUpdate)
+            {
+                Thread.Sleep(delayUserInteraction);
+                cancellationToken.ThrowIfCancellationRequested();
+                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction, cancellationToken);
+                jobListing.Title = updatedJobListing.Title;
+                jobListing.Published = updatedJobListing.Published;
+                jobListing.EndDate = updatedJobListing.EndDate;
+                jobListing.ContactInformation = updatedJobListing.ContactInformation;
+                jobListing.Description = updatedJobListing.Description;
+                jobListing.ApplyLink = updatedJobListing.ApplyLink;
+                jobListing.Refresh = false;
+            }
+            var mergedList = SeleniumTestsHelpers.MergeJobListingsOverWriteAlreadyExisting(newJobListings, savedJobListings.JobListingsList);
+            SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
+            returnMessage += $" Existing nbr of JobListings was {savedJobListings.JobListingsList.Count}, updating {exisingJobLisingsToUpdate.Count} of them since they were marked for update";
+        }
+
         return returnMessage;
     }
 

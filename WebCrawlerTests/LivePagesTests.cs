@@ -89,7 +89,7 @@ namespace WebCrawler
             }
             
             var existingJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
-            var mergedList = SeleniumTestsHelpers.MergeJobListings(jobListings, existingJobListings.JobListingsList);
+            var mergedList = SeleniumTestsHelpers.MergeJobListingsIgnoreAlreadyExisting(jobListings, existingJobListings.JobListingsList);
             SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
         }
 

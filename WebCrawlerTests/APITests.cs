@@ -28,7 +28,6 @@ namespace WebCrawler
             _api.CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(url, selectorXPathForJobEntry, fileName, addDomainToJobPaths, delayUserInteraction, removeParams);
         }
 
-
         [OneTimeTearDown]
         public void CloseChrome()
         {

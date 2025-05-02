@@ -2,6 +2,7 @@
 {
     public class JobListing
     {
+        public bool Refresh { get; set; } = false;
         public string Title { get; set; } = string.Empty;
         public string JobLink { get; set; } = string.Empty;
         public string Published { get; set; } = string.Empty;
