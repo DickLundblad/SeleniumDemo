@@ -17,16 +17,21 @@
 
         <!-- Action Buttons Section -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <Button Content="OpenCrawlerFile" Width="130" Click="OpenFileButton_Click"/>
             <Button Content="Reload Crawl Info" Width="130" Margin="5" Click="Button_Crawl_Info_Click"/>
             <Button Content="Start Chrome In Debug" Width="130" Margin="5" Click="Button_Chrome_Debug_Click"/>
             <Button Content="Crawl Selected Sites" Width="130" Margin="5" Click="Button_Start_Crawl_Click"/>
         </StackPanel>
-
-        <!-- Status Section -->
+        <!-- Status Section - Enhanced with StatusTextBlock -->
         <StackPanel Grid.Row="1" Margin="10,0,10,10">
             <TextBlock x:Name="StatusLabel" Margin="0,0,0,5" TextWrapping="Wrap"/>
+            <Border Background="#FFF0F0" CornerRadius="3" Padding="5" Margin="0,5,0,0">
+                <ScrollViewer x:Name="StatusScrollViewer" VerticalScrollBarVisibility="Auto" MaxHeight="70">
+                    <TextBlock x:Name="StatusTextBlock" TextWrapping="Wrap" FontFamily="Consolas"/>
+                </ScrollViewer>
+            </Border>
             <TextBlock Text="To use Chat GPT, please add .env file to same folder where application was installed" 
-                       FontStyle="Italic" Margin="0,5,0,0"/>
+                      FontStyle="Italic" Margin="0,5,0,0"/>
         </StackPanel>
 
         <!-- Main Data Grid Section -->
@@ -81,7 +86,7 @@
         <!-- Path Selection (now below main grid) -->
         <DockPanel Grid.Row="3" Margin="10,0,10,5">
             <TextBlock DockPanel.Dock="Left" Text="Working Directory:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-            <TextBox x:Name="PathTextBox" Margin="0,0,5,0"/>
+            <TextBox x:Name="PathTextBox" Margin="0,0,5,0" IsReadOnly="True"/>
             <Button Content="OpenFolder" Width="75" Click="OpenFolderButton_Click"/>
             <Button Content="Refresh" Width="75" Click="RefreshButton_Click"/>
         </DockPanel>

@@ -15,6 +15,8 @@ using System.Runtime.CompilerServices;
 using System;
 using System.Windows.Controls;
 using System.Diagnostics;
+using DocumentFormat.OpenXml.Presentation;
+using System.Threading;
 
 
 namespace JobCrawlerWpfApp
@@ -51,40 +53,113 @@ namespace JobCrawlerWpfApp
             }
         }
 
-        public ObservableCollection<CrawlItem> CsvData { get; } = new ObservableCollection<CrawlItem>();
+        public ObservableCollection<CrawlItem> CrawlData { get; } = new ObservableCollection<CrawlItem>();
         private JobListingsApi _api;
         private const string FixedCsvPath = @"Resources\JobCrawlSites.csv";
         private const string FixedResultFolderPath = @"JobListings";
         const char RESULT_FILE_COLUMN_SEPARATOR = ';';
+        private readonly object _statusLock = new object();
+        private CancellationTokenSource _cancellationTokenSource;
+        private bool _isCrawling = false;
         
         public MainWindow()
         {
+            AsyncLogger.Initialize(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"JobCrawler","logs",$"log_{DateTime.Now:yyyyMMdd}.txt"));
             InitializeComponent();
             DataContext = this;
-            CsvDataGrid.ItemsSource = CsvData;
+            CsvDataGrid.ItemsSource = CrawlData;
             LoadCsvData(FixedCsvPath, RESULT_FILE_COLUMN_SEPARATOR);
             LoadFolderContents(Environment.CurrentDirectory + "\\" + FixedResultFolderPath);
             PathTextBox.Text = Environment.CurrentDirectory + "\\" + FixedResultFolderPath;
+            AppendStatus("Application started");
         }
 
+        public void AppendStatus(string message)
+        {
+            AsyncLogger.Log(message);
+            // Thread-safe append operation
+            lock (_statusLock)
+            {
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    StatusTextBlock.Text += $"{DateTime.Now:HH:mm:ss} - {message}\n";
+                    StatusScrollViewer.ScrollToEnd();
+            
+                    // Optional: Limit the number of lines kept in memory
+                    var lines = StatusTextBlock.Text.Split('\n');
+                    if (lines.Length > 100) // Keep last 100 lines
+                    {
+                        StatusTextBlock.Text = string.Join("\n", lines.Skip(lines.Length - 100));
+                    }
+                }), System.Windows.Threading.DispatcherPriority.Background);
+            }
+        }
         private void Button_Crawl_Info_Click(object sender, RoutedEventArgs e)
         {
-            StatusLabel.Text = $"Loaded info about sites to crawl from: {FixedCsvPath}";
-
-            // Load and display CSV data
+           AppendStatus($"Loaded info about sites to crawl from: {FixedCsvPath}");
            LoadCsvData(FixedCsvPath, RESULT_FILE_COLUMN_SEPARATOR);
         }
         private void Button_Chrome_Debug_Click(object sender, RoutedEventArgs e)
         {
-            StatusLabel.Text = "Opened Chrome in Debug";
+            AppendStatus("Opening Chrome in Debug Mode");
             IWebDriver driverToUse = ChromeDebugger.StartChromeInDebugMode();
             _api  = new JobListingsApi(driverToUse);
+            AppendStatus("Done: Chrome can now be used for Job crawling");
         }
-
         private void Button_Start_Crawl_Click(object sender, RoutedEventArgs e)
         {
-            StatusLabel.Text = "Begin Crawling";
-            LoadSitesToCrawl();
+            if (_isCrawling)
+            {
+                        // If already crawling, cancel the operation
+                _cancellationTokenSource?.Cancel();
+                AppendStatus("Cancellation requested...");
+                return;
+            }
+
+            try
+            {
+                 _isCrawling = true;
+                _cancellationTokenSource = new CancellationTokenSource();
+                var cancellationToken = _cancellationTokenSource.Token;
+
+                // Update UI
+                AppendStatus("Starting JobCrawling...");
+                ((Button)sender).Content = "Cancel Crawl";  // Change button text
+
+                // Run the crawl operation asynchronously
+                Task.Run(() => 
+                {
+                    try
+                    {
+                        LoadSitesToCrawl(cancellationToken);
+                        AppendStatus("Crawl completed successfully");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        AppendStatus("Crawl was cancelled");
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendStatus($"Crawl failed: {ex.Message}");
+                    }
+                    finally
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            _isCrawling = false;
+                            ((Button)sender).Content = "Crawl Selected Sites"; // Reset button text
+                        });
+                    }
+                }, cancellationToken);
+            }
+
+            catch (Exception ex)
+            {
+                AppendStatus($"Failed to start crawl: {ex.Message}");
+                _isCrawling = false;
+                ((Button)sender).Content = "Crawl Selected Sites";
+            }
+            LoadFolderContents();
         }
 
         private void CheckBox_Click(object sender, RoutedEventArgs e)
@@ -101,44 +176,37 @@ namespace JobCrawlerWpfApp
             }
         }
 
-        private async void LoadSitesToCrawl()
-        { 
-            List<CrawlItem> selectedItems = CsvData.Where(item => item.IsSelected).ToList();
-            
-            if(selectedItems.Count == 0)
+        private void LoadSitesToCrawl(CancellationToken cancellationToken)
+        {
+            var selectedItems = CsvDataGrid.ItemsSource
+                .Cast<CrawlItem>()  // Replace with your actual data type
+                .Where(item => item.IsSelected)
+                .ToList();
+             if(selectedItems.Count == 0)
             {
                 DisplayAlert($"no sites selected, please select some");
             }else
             {
-                foreach (var data in selectedItems)
+                foreach (var site in selectedItems)
+            {
+                // Check for cancellation before processing each site
+                cancellationToken.ThrowIfCancellationRequested();
+
+                AppendStatus($"Processing: {site.Url}");
+        
+                try
                 {
-                    var timeout = TimeSpan.FromMinutes(2);
-                    try
-                    {
-                        StatusLabel.Text = "Crawling " + data.Url;
-                        //await _api.CrawlWithProgressAsync(data.Url, data.SelectorXPathForJobEntry, data.FileName, progress, data.AddDomainToJobPaths, data.DelayUserInteraction, data.RemoveParamsInJobLinks);
-
-                        //var progress = new Progress<CrawlProgressReport>(async report =>
-                        //{
-                        //    await MainThread.InvokeOnMainThreadAsync(() =>
-                        //    {
-                        //        ProgressBar.Progress = report.Percentage / 100.0; // MAUI uses 0.0-1.0 range
-                        //        ProgressLabel.Text = report.Message;
-                        //    });
-
-                        //    Console.WriteLine(report.Message);
-                        //});
-                        var progress = new Progress<CrawlProgressReport>();
-                        _api.CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(data.Url, data.SelectorXPathForJobEntry, data.FileName, data.AddDomainToJobPaths, data.DelayUserInteraction, data.RemoveParamsInJobLinks);
-                        //await _api.CrawlWithProgressAsync(data.Url, data.SelectorXPathForJobEntry, data.FileName, progress,data.AddDomainToJobPaths, data.DelayUserInteraction, data.RemoveParamsInJobLinks);
-                        StatusLabel.Text = "Crawled " + data.FileName;
-                    }
-                    catch (Exception ex)
-                    {
-                        StatusLabel.Text = "Error: " + ex.Message;
-                    }
+                    AppendStatus($"Begin to crawl {site.Url}");
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var returnMessage = _api.CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(site.Url, site.SelectorXPathForJobEntry, site.FileName, site.AddDomainToJobPaths, site.DelayUserInteraction, site.RemoveParamsInJobLinks, cancellationToken);
+                    AppendStatus($"Done crawling site {site.Url}, {returnMessage}");
                 }
-                LoadFolderContents();
+                catch (Exception ex) when (!(ex is OperationCanceledException))
+                {
+                    AppendStatus($"Error crawling {site.Url}: {ex.Message}");
+                }
+                
+            }
             }
         }
 
@@ -149,7 +217,7 @@ namespace JobCrawlerWpfApp
 
         private void LoadCsvData(string filePath, char separator)
         {
-            CsvData.Clear();
+            CrawlData.Clear();
             
             string[] lines = File.ReadAllLines(filePath);
             if (lines.Length == 0) return;
@@ -171,9 +239,40 @@ namespace JobCrawlerWpfApp
                     RemoveParamsInJobLinks = values.Length > 4 ? bool.Parse(values[5]) : true,
                 };
                 
-                CsvData.Add(item);
+                CrawlData.Add(item);
             }
         }
+
+        private void OpenFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var path = Path.Combine(Environment.CurrentDirectory, FixedCsvPath);
+        
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    MessageBox.Show("No CSV file path specified", "Error",MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (!File.Exists(path))
+                {
+                    MessageBox.Show($"CSV file not found at:\n{path}", "Error",MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Open with default associated program
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true  // This is what opens with default program
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not open CSV file:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+}
     private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
     {
         var path = Environment.CurrentDirectory + "\\" + FixedResultFolderPath;
@@ -187,7 +286,6 @@ namespace JobCrawlerWpfApp
                            MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
-
     private void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
         LoadFolderContents();
@@ -242,17 +340,7 @@ namespace JobCrawlerWpfApp
             MessageBox.Show($"Error loading folder: {ex.Message}");
         }
     }
-        public class CrawlProgressReport
-        {
-            public string Message { get; }
-            public int Percentage { get; }
-    
-            public CrawlProgressReport(string message, int percentage)
-            {
-                Message = message;
-                Percentage = percentage;
-            }
-       }
+
         public class FolderItem
         {
             public string Name { get; set; }

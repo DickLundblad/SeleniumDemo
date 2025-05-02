@@ -4,8 +4,6 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using WebCrawler.Models;
 using WebCrawler;
-using System.Collections.Generic;
-using System.Threading;
 
 public class JobListingsApi
 {
@@ -29,19 +27,21 @@ public class JobListingsApi
         }
     }
 
-    public void CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true)
+    public string CrawlStartPageForJoblinks_ParseJobLinks_WriteToFile(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true, CancellationToken cancellationToken = new CancellationToken())
     {
-        List<JobListing> liveJobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction, removeParams);
+        List<JobListing> liveJobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction, removeParams, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         var savedJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
         var newJobListings = SeleniumTestsHelpers.ExtractNewJobListings(liveJobListings, savedJobListings.JobListingsList);
-
+        string returnMessage = ""; 
         if (newJobListings.Count >0)
         {
             Console.WriteLine($"Number of new job listings to open and parse: {newJobListings.Count}");
             foreach (var jobListing in newJobListings)
             {
                 Thread.Sleep(delayUserInteraction);
-                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
+                cancellationToken.ThrowIfCancellationRequested();
+                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction, cancellationToken);
                 jobListing.Title = updatedJobListing.Title;
                 jobListing.Published = updatedJobListing.Published;
                 jobListing.EndDate = updatedJobListing.EndDate;
@@ -51,166 +51,16 @@ public class JobListingsApi
             }
             var mergedList = SeleniumTestsHelpers.MergeJobListings(newJobListings, savedJobListings.JobListingsList);
             SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
+            returnMessage += $"Existing nbr of JobListings was {savedJobListings.JobListingsList.Count}, adding {newJobListings.Count}";
         }
         else
         {
+            returnMessage = $"No new job listings found after comparing live with already existing jobListings on file: {fileName}";
             Console.WriteLine($"No new job listings found after comparing live with already existing jobListings on file: {fileName}");
         }
+        return returnMessage;
     }
 
-     public async Task CrawlAsynchStartPageForJoblinks_ParseJobLinks_WriteToFile(string url, string selectorXPathForJobEntry,string fileName,IProgress<CrawlProgressReport> progress, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true)
-    {
-        // Report starting
-        progress?.Report(new CrawlProgressReport("Starting crawl process", 0));
-
-        // Step 1: Open and extract job listings
-        progress?.Report(new CrawlProgressReport("Extracting job listings from page", 10));
-        List<JobListing> liveJobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, addDomainToJobPaths, delayUserInteraction, removeParams);
-    
-        // Step 2: Load saved listings
-        progress?.Report(new CrawlProgressReport("Loading saved job listings", 20));
-        var savedJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
-    
-        // Step 3: Find new listings
-        progress?.Report(new CrawlProgressReport("Comparing with existing listings", 30));
-        var newJobListings = SeleniumTestsHelpers.ExtractNewJobListings(liveJobListings, savedJobListings.JobListingsList);
-
-        if (newJobListings.Count > 0)
-        {
-            progress?.Report(new CrawlProgressReport($"Found {newJobListings.Count} new listings to process", 40));
-        
-            int processedCount = 0;
-            foreach (var jobListing in newJobListings)
-            {
-                // Report current job being processed
-                progress?.Report(new CrawlProgressReport(
-                    $"Processing job: {jobListing.JobLink}", 
-                    40 + (int)((double)processedCount / newJobListings.Count * 50)));
-            
-                if (delayUserInteraction > 0)
-                {
-                    await Task.Delay(delayUserInteraction);
-                }
-            
-                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
-                jobListing.Title = updatedJobListing.Title;
-                jobListing.Published = updatedJobListing.Published;
-                jobListing.EndDate = updatedJobListing.EndDate;
-                jobListing.ContactInformation = updatedJobListing.ContactInformation;
-                jobListing.Description = updatedJobListing.Description;
-                jobListing.ApplyLink = updatedJobListing.ApplyLink;
-            
-                processedCount++;
-            }
-        
-            // Merge and save
-            progress?.Report(new CrawlProgressReport("Merging with existing listings", 90));
-            var mergedList = SeleniumTestsHelpers.MergeJobListings(newJobListings, savedJobListings.JobListingsList);
-        
-            progress?.Report(new CrawlProgressReport("Writing results to file", 95));
-            SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
-        
-            progress?.Report(new CrawlProgressReport("Completed successfully", 100));
-        }
-        else
-        {
-            progress?.Report(new CrawlProgressReport("No new job listings found", 100));
-        }
-    }
-   
-public async Task CrawlWithProgressAsync(
-    string url, 
-    string selectorXPathForJobEntry, 
-    string fileName, 
-    IProgress<CrawlProgressReport> progress, 
-    string addDomainToJobPaths = "", 
-    int delayUserInteraction = 0, 
-    bool removeParams = true,
-    CancellationToken cancellationToken = default)
-{
-    try
-    {
-        // Initial progress
-        progress?.Report(new CrawlProgressReport("Starting crawl process", 0));
-        
-        // Check for cancellation
-        cancellationToken.ThrowIfCancellationRequested();
-
-        // Step 1: Extract listings
-        progress?.Report(new CrawlProgressReport("Loading page", 10));
-        var liveJobListings = OpenAndExtractJobListings(url, selectorXPathForJobEntry, 
-            addDomainToJobPaths, delayUserInteraction, removeParams);
-        
-        // Step 2: Load saved
-        progress?.Report(new CrawlProgressReport("Loading saved data", 30));
-        var savedJobListings = SeleniumTestsHelpers.LoadJobListingsFromFile(fileName, "JobListings");
-        
-        // Step 3: Find new
-        progress?.Report(new CrawlProgressReport("Comparing listings", 50));
-        var newJobListings = SeleniumTestsHelpers.ExtractNewJobListings(liveJobListings, savedJobListings.JobListingsList);
-
-        if (newJobListings.Count > 0)
-        {
-            // Process each with progress
-            for (int i = 0; i < newJobListings.Count; i++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                
-                var jobListing = newJobListings[i];
-                int progressPercent = 50 + (int)((double)i / newJobListings.Count * 40);
-                
-                progress?.Report(new CrawlProgressReport(
-                    $"Processing {i+1}/{newJobListings.Count} {fileName}", progressPercent));
-                
-                 if (delayUserInteraction > 0)
-                {
-                    await Task.Delay(delayUserInteraction);
-                }
-
-                await Task.Delay(delayUserInteraction, cancellationToken);
-                
-                var updatedJobListing = OpenAndParseJobLink(jobListing.JobLink, delayUserInteraction);
-                // Update properties.
-                jobListing.Title = updatedJobListing.Title;
-                jobListing.Published = updatedJobListing.Published;
-                jobListing.EndDate = updatedJobListing.EndDate;
-                jobListing.ContactInformation = updatedJobListing.ContactInformation;
-                jobListing.Description = updatedJobListing.Description;
-                jobListing.ApplyLink = updatedJobListing.ApplyLink;
-            }
-            
-            // Final steps
-            progress?.Report(new CrawlProgressReport("Saving results", 95));
-            var mergedList = SeleniumTestsHelpers.MergeJobListings(newJobListings, savedJobListings.JobListingsList);
-            SeleniumTestsHelpers.WriteListOfJobsToFile(mergedList, fileName, "JobListings");
-        }
-        
-        progress?.Report(new CrawlProgressReport($"Completed crawling: {fileName}", 100));
-    }
-    catch (OperationCanceledException)
-    {
-        progress?.Report(new CrawlProgressReport("Cancelled", 0));
-        throw;
-    }
-    catch (Exception ex)
-    {
-        progress?.Report(new CrawlProgressReport($"Error: {ex.Message}", 0));
-        throw;
-    }
-}    
-    
-    // Progress report class
-    public class CrawlProgressReport
-    {
-        public string Message { get; }
-        public int Percentage { get; }
-    
-        public CrawlProgressReport(string message, int percentage)
-        {
-            Message = message;
-            Percentage = percentage;
-        }
-    }
     public void MergeResultFilesToExcelFile(string fileName, string[] files)
     {
         SeleniumTestsHelpers.CreateExcelFromExistingFiles(fileName, files);
@@ -334,7 +184,7 @@ public async Task CrawlWithProgressAsync(
         return response;
    }
 
-   public JobListing OpenAndParseJobLink(string url, int delayUserInteraction)
+   public JobListing OpenAndParseJobLink(string url, int delayUserInteraction,  CancellationToken cancellationToken = new CancellationToken())
     {
         var jobListing = new JobListing();
         jobListing.JobLink = url;
@@ -345,6 +195,7 @@ public async Task CrawlWithProgressAsync(
             _driver.Navigate().GoToUrl(url);
             AcceptPopups();
             Thread.Sleep(delayUserInteraction);
+            cancellationToken.ThrowIfCancellationRequested();
             WebDriverWait wait = new(_driver, TimeSpan.FromSeconds(10));
             try
             {
@@ -424,12 +275,18 @@ public async Task CrawlWithProgressAsync(
         bool IsDocumentReady = wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
     }
 
-   public List<JobListing> OpenAndExtractJobListings(string url, string selectorXPathForJobEntry, string addDomainToJobPaths, int delayUserInteraction, bool removeParams = true)
+   public List<JobListing> OpenAndExtractJobListings(string url, string selectorXPathForJobEntry, string addDomainToJobPaths, int delayUserInteraction, bool removeParams = true, CancellationToken cancellationToken = new CancellationToken())
     {
-        ((IJavaScriptExecutor)_driver).ExecuteScript("window.open();");
-        _driver.SwitchTo().Window(_driver.WindowHandles.Last());
-        _driver.Navigate().GoToUrl(url);
-
+        try{
+            ((IJavaScriptExecutor)_driver).ExecuteScript("window.open();");
+            _driver.SwitchTo().Window(_driver.WindowHandles.Last());
+            _driver.Navigate().GoToUrl(url);
+        }catch (Exception ex) 
+        {
+            Console.WriteLine($"Could not open {url} with driver, check that browser is opened {ex.Message}");
+            throw;
+        }
+        cancellationToken.ThrowIfCancellationRequested();
         AcceptPopups();
         Thread.Sleep(delayUserInteraction);
         var jobNodes = _driver.FindElements(By.XPath(selectorXPathForJobEntry));
@@ -443,6 +300,7 @@ public async Task CrawlWithProgressAsync(
         List<JobListing> jobListings = new();
         foreach (var node in jobNodes)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var jobListing = new JobListing();
             jobListing.JobLink = SeleniumTestsHelpers.ExtractHref(addDomainToJobPaths, node, removeParams);
             jobListings.Add(jobListing);
