@@ -127,19 +127,48 @@ namespace WebCrawler
         [Test]
         public void MergeJobListingsIgnoreAlreadyExisting()
         {
-            JobListings existingJobListings = new JobListings("newexisting");
-            JobListings newJobListings = new JobListings("fileName");
+            var randomName = Guid.NewGuid().ToString(); // Generate a random name
+            var fileName = $"UpdateExistingJobListings_{randomName}";
+            var contactInformation1 = "Original Contact Information 1";
+            var updatedContactInformation = "updated Contact Information";
+            var jobLink1 = "https://www.linkedin.com/link1";
+            JobListings existingJobListings = new JobListings(fileName);
+            var job1 = new JobListing() { JobLink = jobLink1, ContactInformation = contactInformation1 };
+            existingJobListings.InsertOrUpdate(job1);
+            var job2 = new JobListing() { JobLink = jobLink1, ContactInformation = updatedContactInformation };
+            JobListings newJobListings = new JobListings(fileName);
+            newJobListings.InsertOrUpdate(job2);
+
             // existing and new  with same URL, new is ignored
-            var res = SeleniumTestsHelpers.MergeJobListingsIgnoreAlreadyExisting(existingJobListings.JobListingsList, newJobListings.JobListingsList);
+            var res = SeleniumTestsHelpers.MergeJobListingsIgnoreAlreadyExisting(newJobListings.JobListingsList, existingJobListings.JobListingsList);
+            Assert.That(res.Count, Is.EqualTo(1), "The merged list should only contain the 1 job listing.");
+            Assert.That(res.FirstOrDefault().ContactInformation, Is.EquivalentTo(contactInformation1), "Contact information from the new JobListing should not be used.");
         }
 
         [Test]
         public void MergeJobListingsOverWriteAlreadyExisting()
         {
-            JobListings existingJobListings = new JobListings("newexisting");
-            JobListings newJobListings = new JobListings("fileName");
-            // existing and new  with same URL, new overwrite existingif property Refresh is set to true
-            var res = SeleniumTestsHelpers.MergeJobListingsOverWriteAlreadyExisting(existingJobListings.JobListingsList, newJobListings.JobListingsList);
+            var randomName = Guid.NewGuid().ToString(); // Generate a random name
+            var fileName = $"UpdateExistingJobListings_{randomName}";
+            var contactInformation1 = "Original Contact Information 1";
+            var contactInformation2 = "Original Contact Information 2";
+            var updatedContactInformation = "updated Contact Information";
+            var jobLink1 = "https://www.linkedin.com/link1";
+            var jobLink2 = "https://www.linkedin.com/link2";
+            JobListings existingJobListings = new JobListings(fileName);
+            var job1 = new JobListing() { JobLink = jobLink1, ContactInformation = contactInformation1 };
+            var job2 = new JobListing() { JobLink = jobLink2, ContactInformation = contactInformation2 };
+            existingJobListings.InsertOrUpdate(job1);
+            existingJobListings.InsertOrUpdate(job2);
+
+            var jobUpdated = new JobListing() { JobLink = jobLink1, ContactInformation = updatedContactInformation };
+            JobListings newJobListings = new JobListings(fileName);
+            newJobListings.InsertOrUpdate(jobUpdated);
+
+            // existing and new  with same URL, new is overWritten
+            var res = SeleniumTestsHelpers.MergeJobListingsOverWriteAlreadyExisting(newJobListings.JobListingsList, existingJobListings.JobListingsList);
+            Assert.That(res.Count, Is.EqualTo(2), "The merged list should only contain the 2 job listings.");
+            Assert.That(res.FirstOrDefault(e=> e.JobLink == jobLink1).ContactInformation, Is.EquivalentTo(updatedContactInformation), "Contact information from the new JobListing should  be used.");
         }
         
     }

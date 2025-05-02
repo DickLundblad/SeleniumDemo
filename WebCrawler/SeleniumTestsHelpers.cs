@@ -111,9 +111,10 @@ namespace WebCrawler
         /// <returns></returns>
         public static List<JobListing> MergeJobListingsOverWriteAlreadyExisting(List<JobListing> newList, List<JobListing> existingList)
         {
-            return newList
-                .Where(newJob => !existingList.Any(existingJob => existingJob.JobLink == newJob.JobLink && existingJob.Refresh== false))
-                .Concat(existingList)
+            // existing list should be updated with the new list items if the JobLink is the same
+            return existingList
+                .Where(newJob => !newList.Any(existingJob => existingJob.JobLink == newJob.JobLink))
+                .Concat(newList)
                 .ToList();
         }
 
