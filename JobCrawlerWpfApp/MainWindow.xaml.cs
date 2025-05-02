@@ -63,8 +63,8 @@ namespace JobCrawlerWpfApp
             DataContext = this;
             CsvDataGrid.ItemsSource = CsvData;
             LoadCsvData(FixedCsvPath, RESULT_FILE_COLUMN_SEPARATOR);
-            LoadFolderContents(Environment.CurrentDirectory + "\"" + FixedResultFolderPath);
-            PathTextBox.Text = Environment.CurrentDirectory + "\"" + FixedResultFolderPath;
+            LoadFolderContents(Environment.CurrentDirectory + "\\" + FixedResultFolderPath);
+            PathTextBox.Text = Environment.CurrentDirectory + "\\" + FixedResultFolderPath;
         }
 
         private void Button_Crawl_Info_Click(object sender, RoutedEventArgs e)
@@ -176,9 +176,10 @@ namespace JobCrawlerWpfApp
         }
     private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!string.IsNullOrEmpty(FixedResultFolderPath) && Directory.Exists(FixedResultFolderPath))
+        var path = Environment.CurrentDirectory + "\\" + FixedResultFolderPath;
+        if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
         {
-            Process.Start("explorer.exe", FixedResultFolderPath);
+            Process.Start("explorer.exe", path);
         }
         else
         {
