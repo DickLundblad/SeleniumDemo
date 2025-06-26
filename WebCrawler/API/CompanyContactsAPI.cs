@@ -94,7 +94,7 @@ public class CompanyContactsAPI
                 ///# HACK need to re-think this method. a bit to complex
                 Thread.Sleep(delayUserInteraction);
                 cancellationToken.ThrowIfCancellationRequested();
-                var updatedCompanyListing = OpenAndParseJobLink(companyListing.NumberOfEmployes, delayUserInteraction, cancellationToken);
+                var updatedCompanyListing = OpenAndParseJobLink(companyListing.SourceLink, delayUserInteraction, cancellationToken);
                 companyListing.Description = updatedCompanyListing.Description;
                 companyListing.TurnoverYear = updatedCompanyListing.TurnoverYear;
                 companyListing.Turnover = updatedCompanyListing.Turnover;
@@ -198,7 +198,7 @@ public class CompanyContactsAPI
     public CompanyListing OpenAndParseJobLink(string url, int delayUserInteraction, CancellationToken cancellationToken = new CancellationToken())
     {
         var companyListing = new CompanyListing();
-        companyListing.NumberOfEmployes = url;
+        companyListing.SourceLink = url;
         try
         {
             ((IJavaScriptExecutor)_driver).ExecuteScript("window.open();");
@@ -485,22 +485,48 @@ public class CompanyContactsAPI
         return orgNbr;
     }
 
-    private string ParseTurnoverAmountFromText(string input)
+    private int ParseTurnoverAmountFromText(string input)
     {
         string regExp = @"OMSÄTTNING\s+(\d{4})\s*\n\s*([\d\s]+)";
-        string orgNbr = ExtractUsingRegexp(input, regExp, 2);
+        string turnoverStr = ExtractUsingRegexp(input, regExp, 2);
+        if (! string.IsNullOrEmpty(turnoverStr))
+        {
+            bool res = int.TryParse(turnoverStr.Replace(" ", ""), out int turnoverAmount);
 
-        return orgNbr;
+            if (res)
+            {
+                return turnoverAmount;
+            }
+            else
+            {
+                Console.WriteLine($"Could not parse turnover amount from string: {turnoverStr}");
+                return 0;
+            }
+        }
+        else
+        {
+            Console.WriteLine($"No turnover amount found in the input text: {input}");
+            return 0;
+        }
     }
 
-    private string ParseNbrOfEmplyeesFromText(string input)
+    private int ParseNbrOfEmplyeesFromText(string input)
     {
         string regExp = @"ANSTÄLLDA\s*\n\s*(\d+)";
-        string orgNbr = ExtractUsingRegexp(input, regExp);
+        string nbrOfEmpStr = ExtractUsingRegexp(input, regExp).Trim();
 
-        return orgNbr;
+        bool res = int.TryParse(nbrOfEmpStr, out int empNbr);
+
+        if (res)
+        {
+            return empNbr;
+        }
+        else
+        {
+            Console.WriteLine($"Could not parse Emplyees from string: {nbrOfEmpStr}");
+            return empNbr;
+        }
     }
-
 
     private void LoadEnvironmentVariables()
     {

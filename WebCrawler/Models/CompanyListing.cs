@@ -6,9 +6,9 @@
 
         public string CompanyName { get; set; } = string.Empty;
         public string SourceLink { get; set; } = string.Empty;
-        public string Turnover { get; set; } = string.Empty;
+        public int Turnover { get; set; } = 0;
         public string TurnoverYear { get; set; } = string.Empty;
-        public string NumberOfEmployes { get; set; } = string.Empty;
+        public int NumberOfEmployes { get; set; } = 0;
         public string Adress { get; set; } = string.Empty;
         //VistingAdress
         //VistingAdressZipCode
