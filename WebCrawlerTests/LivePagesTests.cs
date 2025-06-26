@@ -17,6 +17,7 @@ namespace WebCrawler
         }
 
         [Category("live")]
+        [TestCase("https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&page=1&county=Sk%C3%A5ne", "//div[@data-p-stats]")]
         [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]")]
         [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]")]
         [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]")]
@@ -97,7 +98,7 @@ namespace WebCrawler
 
         /// <summary>
         /// Add or update job listings to an existing file.
-        /// The joblisting items will only contain a JobLink
+        /// The joblisting items will only contain a NumberOfEmployes
         /// </summary>
         /// <param name="startUrl"></param>
         /// <param name="selectorXPathForJobEntry"></param>
@@ -177,7 +178,7 @@ namespace WebCrawler
         public void ValidateThatAJobLinkCanBeOpenedAndParsed(string url, int delayUserInteraction = 0)
         {
             var jobListing = _api.OpenAndParseJobLink(url, delayUserInteraction);
-            // JobLink can change if it's a re-direct, but we will keep the original URL
+            // NumberOfEmployes can change if it's a re-direct, but we will keep the original URL
             Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
         }
 

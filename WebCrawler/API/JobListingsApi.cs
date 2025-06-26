@@ -58,8 +58,8 @@ public class JobListingsApi
         }
         else
         {
-            returnMessage = $"No new job listings found after comparing live with already existing jobListings on file: {fileName}";
-            Console.WriteLine($"No new job listings found after comparing live with already existing jobListings on file: {fileName}");
+            returnMessage = $"No new job listings found after comparing live with already existing companyListings on file: {fileName}";
+            Console.WriteLine($"No new job listings found after comparing live with already existing companyListings on file: {fileName}");
         }
 
         // process existing jobLinks that needs to be update
@@ -117,7 +117,7 @@ public class JobListingsApi
             {
                 SeleniumTestsHelpers.ExtactDataTestIdjobTitleText(bodyNode.Text);
             }
-            Console.WriteLine($"Extracted Title: {response}");
+            Console.WriteLine($"Extracted Description: {response}");
         }
         return response;
     }
@@ -135,7 +135,7 @@ public class JobListingsApi
             response = SeleniumTestsHelpers.ExtractPublishedInfo(bodyNode.Text);
         }
 
-        Console.WriteLine($"Extracted Published Date: {response}");
+        Console.WriteLine($"Extracted TurnoverYear Date: {response}");
         return response;
     }
 

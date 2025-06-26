@@ -50,13 +50,13 @@ namespace WebCrawler.WebCrawlerTests
 
             ListingsOverview listingsOverviewFromFile = GetListingsOverviewFromFile(fileNameOverview);
             Assert.That(listingsOverviewFromFile.JobListings.Count, Is.EqualTo(overView.JobListings.Count), "The re-loaded ListingsOverview from file does not contain the same number of objects.");
-            Assert.That(listingsOverviewFromFile.JobListings[0].JobListingsList[0].JobLink, Is.EqualTo(job1.JobLink), "The re-loaded ListingsOverview from file does not contain the same JobLink .");
-            Assert.That(listingsOverviewFromFile.JobListings[1].JobListingsList[0].ContactInformation, Is.EqualTo(job2.ContactInformation), "The re-loaded ListingsOverview from file does not contain the same ContactInformation.");
+            Assert.That(listingsOverviewFromFile.JobListings[0].JobListingsList[0].JobLink, Is.EqualTo(job1.JobLink), "The re-loaded ListingsOverview from file does not contain the same NumberOfEmployes .");
+            Assert.That(listingsOverviewFromFile.JobListings[1].JobListingsList[0].ContactInformation, Is.EqualTo(job2.ContactInformation), "The re-loaded ListingsOverview from file does not contain the same Adress.");
         }
 
         /// <summary>
         /// Test to check if the existing overview is updated with new job listings
-        /// JobLink are considered to be primary key, but only unique in a list with the same name
+        /// NumberOfEmployes are considered to be primary key, but only unique in a list with the same name
         /// </summary>
         [Test] 
         public void InsertOrUpdateExistingOverview()
@@ -81,7 +81,7 @@ namespace WebCrawler.WebCrawlerTests
 
             // create a job listing with the same jobLink as job1 but different contact information
             
-            var updatedContactInformation = "Some more detailed ContactInformation";
+            var updatedContactInformation = "Some more detailed Adress";
             JobListings jobListingUpdated = new JobListings(nameJobListing1);
             var job1Updated = new JobListing() { JobLink = jobLink1, ContactInformation = updatedContactInformation }; 
             jobListingUpdated.InsertOrUpdate(job1Updated);
@@ -89,7 +89,7 @@ namespace WebCrawler.WebCrawlerTests
             Assert.That(overView.JobListings.Count, Is.EqualTo(2),"Two Joblists should exist before the update");
             overView.InsertOrUpdate(jobListingUpdated);
             var job1UpdatedSeach = overView.JobListings[0].JobListingsList.Where(e => e.JobLink == jobLink1).FirstOrDefault();
-            Assert.That(job1UpdatedSeach.ContactInformation, Is.EqualTo(updatedContactInformation), "The re-loaded ListingsOverview from file does not contain the same ContactInformation.");
+            Assert.That(job1UpdatedSeach.ContactInformation, Is.EqualTo(updatedContactInformation), "The re-loaded ListingsOverview from file does not contain the same Adress.");
             Assert.That(overView.JobListings.Count, Is.EqualTo(2),"Since the JoblistIng should on ly be updated the count should be the same");
         }
 

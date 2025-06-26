@@ -1,11 +1,13 @@
 ﻿using ClosedXML.Excel;
 using CsvHelper;
 using CsvHelper.Configuration;
+using DocumentFormat.OpenXml.Bibliography;
 using OpenQA.Selenium;
-using WebCrawler.Models;
+using System;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using WebCrawler.Models;
 
 namespace WebCrawler
 {
@@ -37,6 +39,36 @@ namespace WebCrawler
                         .Replace("(", "_");
         }
 
+        public static string? ExtractOrgNbr(IWebElement jobNode)
+        {
+            string? orgNbr = string.Empty;
+            //string orgNbrXPath = "//span[text()='Org.nr']";
+            string orgNbrXPath = "//span[span[text()='Org.nr']]"; 
+            try
+            {
+                //Console.WriteLine("temp: " + temp);
+                // Find the <span> with the text 'Org.nr'
+                var labelSpan = jobNode.FindElement(By.XPath(orgNbrXPath));
+
+                // Find the inner span with the label text
+                //var labelSpan = jobNode.FindElement(By.XPath("//span[span[text()='org nr']]"));
+
+                // Get the full text from the outer span (which includes both label and value)
+                var fullText = labelSpan.Text; // e.g. "org nr 559077-3171"
+
+                // Remove the label to extract the value
+                var value = fullText.Replace("Org.nr", "").Trim();
+
+                Console.WriteLine("Parsed Org.nr value: " + value);
+            }
+            catch (NoSuchElementException)
+            {
+                Console.WriteLine("Could not find Org.nr span.");
+                throw;
+            }
+            return orgNbr;
+        }
+
         public static string? ExtractHref(string addDomainToJobPaths, IWebElement jobNode, bool removeParams = true)
         {
             string? jobLink = string.Empty;
@@ -56,7 +88,7 @@ namespace WebCrawler
                 {
                     var innerHtml = RetryFindAttribute(jobNode, "innerHTML");
                 }
-                Console.WriteLine($"Job link: {jobLink}");
+                Console.WriteLine($"href:: {jobLink}");
             }
             catch (Exception ex)
             {
@@ -89,8 +121,22 @@ namespace WebCrawler
             throw new StaleElementReferenceException($"Element is stale after {retryCount} retries");
         }
 
+
         /// <summary>
-        /// Ignore lines where JobLink are the same, merge the rest of the lines
+        /// Ignore lines where CompanyID are the same, merge the rest of the lines
+        /// </summary>
+        /// <param name="newList"></param>
+        /// <param name="existingList"></param>
+        /// <returns></returns>
+        public static List<CompanyListing> MergeCompanyListingsIgnoreAlreadyExisting(List<CompanyListing> newList, List<CompanyListing> existingList)
+        {
+            return newList
+                .Where(newJob => !existingList.Any(existingJob => existingJob.OrgNumber == newJob.OrgNumber))
+                .Concat(existingList)
+                .ToList();
+        }
+        /// <summary>
+        /// Ignore lines where NumberOfEmployes are the same, merge the rest of the lines
         /// </summary>
         /// <param name="newList"></param>
         /// <param name="existingList"></param>
@@ -103,21 +149,49 @@ namespace WebCrawler
                 .ToList();
         }
 
+
         /// <summary>
-        /// lines where JobLink are the same, the new list items should overwrite the existing
+        /// lines where OrgNumber are the same, the new list items should overwrite the existing
+        /// </summary>
+        /// <param name="newList"></param>
+        /// <param name="existingList"></param>
+        /// <returns></returns>
+        public static List<CompanyListing> MergeCompanyListingsOverWriteAlreadyExisting(List<CompanyListing> newList, List<CompanyListing> existingList)
+        {
+            // existing list should be updated with the new list items if the OrgNumber is the same
+            return existingList
+                .Where(newJob => !newList.Any(existingCompany => existingCompany.OrgNumber == newJob.OrgNumber))
+                .Concat(newList)
+                .ToList();
+        }
+
+        /// <summary>
+        /// lines where NumberOfEmployes are the same, the new list items should overwrite the existing
         /// </summary>
         /// <param name="newList"></param>
         /// <param name="existingList"></param>
         /// <returns></returns>
         public static List<JobListing> MergeJobListingsOverWriteAlreadyExisting(List<JobListing> newList, List<JobListing> existingList)
         {
-            // existing list should be updated with the new list items if the JobLink is the same
+            // existing list should be updated with the new list items if the NumberOfEmployes is the same
             return existingList
                 .Where(newJob => !newList.Any(existingJob => existingJob.JobLink == newJob.JobLink))
                 .Concat(newList)
                 .ToList();
         }
 
+        public static List<CompanyListing> GetCompanyListingsToUpdate(List<CompanyListing> list)
+        {
+            var resList = new List<CompanyListing>();
+            foreach (var job in list)
+            {
+                if (job.Refresh == true)
+                {
+                    resList.Add(job);
+                }
+            }
+            return resList;
+        }
 
         public static List<JobListing> GetJobListingsToUpdate(List<JobListing> list)
         {
@@ -132,12 +206,74 @@ namespace WebCrawler
             return resList;
         }
 
+        public static List<CompanyListing> ExtractUniqueCompanyListings(List<CompanyListing> newList, List<CompanyListing> existingList)
+        {
+            return newList
+                .Where(newJob => !existingList.Any(existingJob => existingJob.NumberOfEmployes == newJob.NumberOfEmployes))
+                .ToList();
+        }
         public static List<JobListing> ExtractUniqueJobListings(List<JobListing> newList, List<JobListing> existingList)
         {
             return newList
                 .Where(newJob => !existingList.Any(existingJob => existingJob.JobLink == newJob.JobLink))
                 .ToList();
         }
+
+        public static void WriteListOfCompaniesToFile(List<CompanyListing> results, string filePath, string subFolder = "")
+        {
+            if (!filePath.EndsWith(RESULT_FILE_ENDING))
+            {
+                filePath += RESULT_FILE_ENDING;
+            }
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                EnsureFolderExists(subFolder);
+                filePath = Path.Combine(subFolder, filePath);
+            }
+
+
+            foreach (var jobListing in results)
+            {
+                Console.WriteLine($"NumberOfEmployes: {jobListing.NumberOfEmployes}, Description: {jobListing.Description}, CompanyName: {jobListing.CompanyName}");
+            }
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
+            };
+
+            using (var writer = new StreamWriter(filePath))
+            using (var csv = new CsvWriter(writer, config))
+            {
+                csv.WriteHeader<CompanyListing>();
+                csv.NextRecord();
+                foreach (var jobListing in results)
+                {
+                    // Remove invalid characters
+                    jobListing.Description = RemoveInvalidChars(jobListing.Description);
+                    jobListing.CompanyName = RemoveInvalidChars(jobListing.CompanyName);
+                    if (!string.IsNullOrEmpty(jobListing.OrgNumber)) 
+                    {
+                        csv.WriteRecord(jobListing);
+                        csv.NextRecord();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"NumberOfEmployes is empty for company listing: {jobListing.Description}");
+                    }
+                }
+            }
+
+            Console.WriteLine($"TSV file created: {filePath}");
+            using (var reader = new StreamReader(filePath))
+            using (var csvR = new CsvReader(reader, config))
+            {
+                var records = csvR.GetRecords<CompanyListing>().ToList();
+                //Assert.That(records.Count, Is.GreaterThan(0), "The  file does not contain any job listings.");
+                Console.WriteLine($"Validated that the file contains {records.Count} company listings.");
+            }
+        }
+
 
         public static void WriteListOfJobsToFile(List<JobListing> results, string filePath, string subFolder="")
         {
@@ -154,7 +290,7 @@ namespace WebCrawler
 
             foreach (var jobListing in results)
             {
-                Console.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
+                Console.WriteLine($"NumberOfEmployes: {jobListing.JobLink}, Description: {jobListing.Title}, CompanyName: {jobListing.Description}");
             }
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
@@ -172,14 +308,14 @@ namespace WebCrawler
                     // Remove invalid characters
                     jobListing.Title = RemoveInvalidChars(jobListing.Title);
                     jobListing.Description = RemoveInvalidChars(jobListing.Description);
-                    if (!string.IsNullOrEmpty(jobListing.JobLink)) // Ensure JobLink is not empty
+                    if (!string.IsNullOrEmpty(jobListing.JobLink)) // Ensure NumberOfEmployes is not empty
                     {
                         csv.WriteRecord(jobListing);
                         csv.NextRecord();
                     }
                     else
                     {
-                        Console.WriteLine($"JobLink is empty for job listing: {jobListing.Title}");
+                        Console.WriteLine($"NumberOfEmployes is empty for job listing: {jobListing.Title}");
                     }
                 }
             }
@@ -208,7 +344,7 @@ namespace WebCrawler
             // Log the job listings
             foreach (var jobListing in results.JobListingsList)
             {
-                Console.WriteLine($"JobLink: {jobListing.JobLink}, Title: {jobListing.Title}, Description: {jobListing.Description}");
+                Console.WriteLine($"NumberOfEmployes: {jobListing.JobLink}, Description: {jobListing.Title}, CompanyName: {jobListing.Description}");
             }
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
@@ -226,20 +362,67 @@ namespace WebCrawler
                     // Remove invalid characters
                     jobListing.Title = RemoveInvalidChars(jobListing.Title);
                     jobListing.Description = RemoveInvalidChars(jobListing.Description);
-                    if (!string.IsNullOrEmpty(jobListing.JobLink)) // Ensure JobLink is not empty
+                    if (!string.IsNullOrEmpty(jobListing.JobLink)) // Ensure NumberOfEmployes is not empty
                     {
                         csv.WriteRecord(jobListing);
                         csv.NextRecord();
                     }
                     else
                     {
-                        Console.WriteLine($"JobLink is empty for job listing: {jobListing.Title}");
+                        Console.WriteLine($"NumberOfEmployes is empty for job listing: {jobListing.Title}");
                     }
                 }
             }
 
             Console.WriteLine($"file created: {filePath}");
            
+        }
+
+
+        public static CompanyListings LoadCompanyListingsFromFile(string fileName, string subFolder = "")
+        {
+            var nameWithoutFileExtension = Path.GetFileNameWithoutExtension(fileName);
+            var jobListings = new CompanyListings(nameWithoutFileExtension);
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
+                MissingFieldFound = null, // Ignore missing fields
+                HeaderValidated = null   // Ignore header validation
+            };
+            if (!fileName.EndsWith(RESULT_FILE_ENDING))
+            {
+                fileName += RESULT_FILE_ENDING;
+            }
+
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                fileName = Path.Combine(subFolder, fileName);
+            }
+            if (File.Exists(fileName))
+            {
+
+                using (var reader = new StreamReader(fileName))
+                using (var csv = new CsvReader(reader, config))
+                {
+                    try
+                    {
+                        jobListings.CompanyListingsList = csv.GetRecords<CompanyListing>().ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error reading file {fileName}: {ex.Message}");
+                        throw;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"File not found: {fileName}");
+            }
+
+            Console.WriteLine($"Loaded {jobListings.CompanyListingsList.Count} Company listings from file: {fileName}");
+            return jobListings;
         }
 
         public static JobListings LoadJobListingsFromFile(string fileName, string subFolder ="")
@@ -518,13 +701,13 @@ namespace WebCrawler
                 foreach (var listing in overView.JobListings)
                 {
                     var worksheet = workbook.Worksheets.Add(listing.Name);
-                    worksheet.Cell(1, 1).Value = "Title";
-                    worksheet.Cell(1, 2).Value = "JobLink";
-                    worksheet.Cell(1, 3).Value = "Published";
-                    worksheet.Cell(1, 4).Value = "EndDate";
-                    worksheet.Cell(1, 5).Value = "ContactInformation";
-                    worksheet.Cell(1, 6).Value = "Description";
-                    worksheet.Cell(1, 7).Value = "Description";
+                    worksheet.Cell(1, 1).Value = "Description";
+                    worksheet.Cell(1, 2).Value = "NumberOfEmployes";
+                    worksheet.Cell(1, 3).Value = "TurnoverYear";
+                    worksheet.Cell(1, 4).Value = "Turnover";
+                    worksheet.Cell(1, 5).Value = "Adress";
+                    worksheet.Cell(1, 6).Value = "CompanyName";
+                    worksheet.Cell(1, 7).Value = "CompanyName";
 
                     int row = 2;
                     foreach (var job in listing.JobListingsList)

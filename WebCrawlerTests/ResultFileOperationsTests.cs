@@ -121,7 +121,7 @@ namespace WebCrawler
             var updatedItem = updatedJobListingsFromFile.JobListingsList.FirstOrDefault(x => x.JobLink == jobLink1);
 
             Assert.That(updatedItem, Is.EqualTo(job1).Using(new JobListingComparer()), " The re-loaded JobListing from file does not contain the same object.");
-            Assert.That(updatedItem.ContactInformation, Is.EqualTo(updatedContactInformation), "The updated item did not have the correct ContactInformation");
+            Assert.That(updatedItem.ContactInformation, Is.EqualTo(updatedContactInformation), "The updated item did not have the correct Adress");
         }
 
         [Test]
