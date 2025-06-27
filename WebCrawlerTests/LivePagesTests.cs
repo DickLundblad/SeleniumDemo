@@ -1,5 +1,6 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using System;
 using WebCrawler.Models;
 
 namespace WebCrawler
@@ -180,6 +181,29 @@ namespace WebCrawler
             var jobListing = _api.OpenAndParseJobLink(url, delayUserInteraction);
             // NumberOfEmployes can change if it's a re-direct, but we will keep the original URL
             Assert.That(jobListing.JobLink, Is.EqualTo(url), "Job link is not url");
+        }
+
+        [Category("live")]
+        [TestCase("Connectitude AB","CEO", "CTO", 0)]
+        public void ValidateLinkedINSearchForCompany(string companyName, string role1, string role2, int delayUserInteraction = 0)
+        {
+            string companyLinkedInUrl = "";//_api.FindCompanyOnLinkedIn(companyName, delayUserInteraction);
+            var searchUrl = string.Empty;
+            var res = string.Empty;
+
+            if (string.IsNullOrEmpty(companyLinkedInUrl))
+            {
+                ///https://www.linkedin.com/search/results/all/?keywords=Connectitude%20AB&origin=GLOBAL_SEARCH_HEADER&sid=nFi
+                searchUrl = $"https://www.linkedin.com/search/results/all/?keywords={Uri.EscapeDataString(companyName)}&origin=GLOBAL_SEARCH_HEADER&sid=nFi";
+            }
+            else 
+            {
+                searchUrl = companyLinkedInUrl+"people/";
+            }
+
+            // look for role1 or role2 in the search results
+            res = _api.OpenAndParseLinkedInForPeople(searchUrl, companyName, role1, role2, delayUserInteraction);
+
         }
 
         [OneTimeTearDown]

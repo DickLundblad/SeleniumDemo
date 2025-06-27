@@ -471,8 +471,8 @@ public class CompanyContactsAPI
 
     private string ParseCompanyDescriptionFromText(string input)
     {
-        string regExp = @"Org\.?nr\s*\n*([0-9]{6}-[0-9]{4})";
-        string orgNbr = ExtractUsingRegexp(input, regExp);
+        // TODO Implement
+        string orgNbr = "";
 
         return orgNbr;
     }
