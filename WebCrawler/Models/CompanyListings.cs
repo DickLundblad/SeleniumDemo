@@ -37,14 +37,32 @@
                 existingCompany.CompanyName = job.CompanyName;
                 existingCompany.SourceLink = job.SourceLink;
 
-                Console.WriteLine($"Company updated: {job.NumberOfEmployes}");
+                Console.WriteLine($"Company updated: {job.OrgNumber}");
                 return true;
             }
             else
             {
                 // Insert
                 companyListings.Add(job);
-                Console.WriteLine($"Company added: {job.NumberOfEmployes}");
+                Console.WriteLine($"Company added: {job.OrgNumber}");
+                return true;
+            }
+        }
+
+        public bool InsertIgnoreAlreadyExistingCompany(CompanyListing job)
+        {
+            var comparer = new CompanyListingComparer();
+            var existingCompany = companyListings.FirstOrDefault(j => comparer.Equals(j, job));
+
+            if (existingCompany == null)
+            {
+                companyListings.Add(job);
+                Console.WriteLine($"Company added: {job.OrgNumber}");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"Company: {job.OrgNumber} already existed and will be ignopre, no update performed");
                 return true;
             }
         }

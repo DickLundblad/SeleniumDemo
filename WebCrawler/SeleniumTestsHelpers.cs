@@ -330,6 +330,53 @@ namespace WebCrawler
             }
         }
 
+        public static void WriteToFile(CompanyListings results, string filePath, string subFolder = "")
+        {
+            if (!filePath.EndsWith(RESULT_FILE_ENDING))
+            {
+                filePath += RESULT_FILE_ENDING;
+            }
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                EnsureFolderExists(subFolder);
+                filePath = Path.Combine(subFolder, filePath);
+            }
+            // Log the job listings
+            foreach (var jobListing in results.CompanyListingsList)
+            {
+                Console.WriteLine($"OrgNumber: {jobListing.OrgNumber}, Description: {jobListing.Description}, Description: {jobListing.Description}");
+            }
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
+            };
+
+            using (var writer = new StreamWriter(filePath))
+            using (var csv = new CsvWriter(writer, config))
+            {
+                csv.WriteHeader<CompanyListing>();
+                csv.NextRecord();
+                foreach (var jobListing in results.CompanyListingsList)
+                {
+                    // Remove invalid characters
+                    jobListing.CompanyName = RemoveInvalidChars(jobListing.CompanyName);
+                    jobListing.Description = RemoveInvalidChars(jobListing.Description);
+                    if (!string.IsNullOrEmpty(jobListing.OrgNumber)) 
+                    {
+                        csv.WriteRecord(jobListing);
+                        csv.NextRecord();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"OrgNumber is empty for company listing: {jobListing.OrgNumber}");
+                    }
+                }
+            }
+            Console.WriteLine($"file created: {filePath}");
+        }
+
+
         public static void WriteToFile(JobListings results, string filePath, string subFolder = "")
         {
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
@@ -344,7 +391,7 @@ namespace WebCrawler
             // Log the job listings
             foreach (var jobListing in results.JobListingsList)
             {
-                Console.WriteLine($"NumberOfEmployes: {jobListing.JobLink}, Description: {jobListing.Title}, CompanyName: {jobListing.Description}");
+                Console.WriteLine($"JobLink: {jobListing.JobLink}, Description: {jobListing.Title}, Description: {jobListing.Description}");
             }
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
@@ -362,20 +409,18 @@ namespace WebCrawler
                     // Remove invalid characters
                     jobListing.Title = RemoveInvalidChars(jobListing.Title);
                     jobListing.Description = RemoveInvalidChars(jobListing.Description);
-                    if (!string.IsNullOrEmpty(jobListing.JobLink)) // Ensure NumberOfEmployes is not empty
+                    if (!string.IsNullOrEmpty(jobListing.JobLink)) // Ensure JobLink is not empty
                     {
                         csv.WriteRecord(jobListing);
                         csv.NextRecord();
                     }
                     else
                     {
-                        Console.WriteLine($"NumberOfEmployes is empty for job listing: {jobListing.Title}");
+                        Console.WriteLine($"JobLink is empty for job listing: {jobListing.Title}");
                     }
                 }
             }
-
-            Console.WriteLine($"file created: {filePath}");
-           
+            Console.WriteLine($"file created: {filePath}");        
         }
 
 

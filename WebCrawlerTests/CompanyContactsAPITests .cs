@@ -63,7 +63,7 @@ namespace WebCrawler
 
 
         [OneTimeTearDown]
-        public void CloseChrome()
+        public void CloseChrome() 
         {
             _api?.Dispose();
         }
