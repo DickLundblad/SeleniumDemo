@@ -654,7 +654,39 @@ namespace WebCrawler
             }
         }
 
-         private static IEnumerable<string> ReadLinesPreservingCellLineBreaks(string filePath, char delimiter)
+        public static void MergeAllCVFilesToOne(string inputFolder = "", string outputFile = "merged.csv")
+        {
+            var csvFiles = Directory.GetFiles(inputFolder, "*.csv");
+
+            using (var writer = new StreamWriter(outputFile))
+            {
+                bool isFirstFile = true;
+
+                foreach (var file in csvFiles)
+                {
+                    var lines = File.ReadAllLines(file);
+
+                    if (lines.Length == 0)
+                        continue;
+
+                    // Write header only from the first file
+                    if (isFirstFile)
+                    {
+                        writer.WriteLine(lines[0]);  // header
+                        isFirstFile = false;
+                    }
+
+                    // Write data rows (skip header)
+                    foreach (var line in lines.Skip(1))
+                    {
+                        writer.WriteLine(line);
+                    }
+                }
+            }
+            Console.WriteLine("Merged CSV written to: " + outputFile);
+        }
+
+        private static IEnumerable<string> ReadLinesPreservingCellLineBreaks(string filePath, char delimiter)
         { 
                             using (var reader = new StreamReader(filePath))
                             {
@@ -790,5 +822,11 @@ namespace WebCrawler
             }
         }
 
+        public static string GetOutputFolderPath()
+        {
+            // Assuming the output folder is in the same directory as the executable    
+            string currentDirectory = Directory.GetCurrentDirectory();
+            return currentDirectory;
+        }
     }
 }
