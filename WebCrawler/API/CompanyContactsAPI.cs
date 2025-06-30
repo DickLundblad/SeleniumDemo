@@ -1,5 +1,6 @@
 using DocumentFormat.OpenXml.Bibliography;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Support.UI;
 using System.Text.RegularExpressions;
 using WebCrawler;
@@ -7,7 +8,7 @@ using WebCrawler.Models;
 
 public class CompanyContactsAPI
 {
-    private  IWebDriver _driver;
+    private IWebDriver _driver;
     private ChatGPTService? _chatService;
     private const string DEFAULT_SUBFOLDER = "CompanyListings";
 
@@ -49,7 +50,7 @@ public class CompanyContactsAPI
     /// <param name="removeParams"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public string CrawlStartPageForCompany_Details_Update_Any_Existing_Files(string url, string selectorXPathForJobEntry,string selectorCSSPath, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true, CancellationToken cancellationToken = new CancellationToken())
+    public string CrawlStartPageForCompany_Details_Update_Any_Existing_Files(string url, string selectorXPathForJobEntry, string selectorCSSPath, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true, CancellationToken cancellationToken = new CancellationToken())
     {
         List<CompanyListing> liveJobListings = OpenAndExtractCompanyListings(url, selectorXPathForJobEntry, selectorCSSPath, addDomainToJobPaths, delayUserInteraction, removeParams, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
@@ -57,9 +58,9 @@ public class CompanyContactsAPI
         var newCompanyListings = SeleniumTestsHelpers.ExtractUniqueCompanyListings(liveJobListings, savedCompanyListings.CompanyListingsList);
         // find any lines that has been marked for Refresh
         var exisingCompanyListingsToUpdate = SeleniumTestsHelpers.GetCompanyListingsToUpdate(savedCompanyListings.CompanyListingsList);
-        string returnMessage = ""; 
+        string returnMessage = "";
         // process new Joblinks
-        if (newCompanyListings.Count >0)
+        if (newCompanyListings.Count > 0)
         {
             Console.WriteLine($"Number of new job listings to open and parse: {newCompanyListings.Count}");
             foreach (var jobListing in newCompanyListings)
@@ -86,7 +87,7 @@ public class CompanyContactsAPI
         }
 
         // process existing jobLinks that needs to be update
-        if (exisingCompanyListingsToUpdate.Count >0)
+        if (exisingCompanyListingsToUpdate.Count > 0)
         {
             Console.WriteLine($"Number of existing job listings to update: {exisingCompanyListingsToUpdate.Count}");
             foreach (var companyListing in exisingCompanyListingsToUpdate)
@@ -115,11 +116,11 @@ public class CompanyContactsAPI
     {
         SeleniumTestsHelpers.CreateExcelFromExistingFiles(fileName, files);
     }
-    
-   public void Dispose()
-   {
-       driver.Quit();
-       driver.Dispose();
+
+    public void Dispose()
+    {
+        driver.Quit();
+        driver.Dispose();
     }
 
 
@@ -296,6 +297,44 @@ public class CompanyContactsAPI
     }
 
 
+    public List<PeopleLinkedInDetail> OpenAndParseLinkedInForPeople(string url, string companyName, string role1, int delayUserInteraction, CancellationToken cancellationToken = new CancellationToken())
+    {
+
+        List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
+
+        try
+        {
+            ((IJavaScriptExecutor)_driver).ExecuteScript("window.open();");
+            _driver.SwitchTo().Window(_driver.WindowHandles.Last());
+            _driver.Navigate().GoToUrl(url);
+            AcceptPopups();
+            Thread.Sleep(delayUserInteraction);
+            cancellationToken.ThrowIfCancellationRequested();
+            WebDriverWait wait = new(_driver, TimeSpan.FromSeconds(10));
+            try
+            {
+                WaitForDocumentReady(wait);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during WaitForDocumentReady() : {ex.Message}");
+            }
+            if (BlockedInfoOnPage())
+            {
+                Console.WriteLine($"Blocked on jobLink page: {url}");
+            }
+            res = ExtractLinkedInPersons(companyName, role1);
+
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning Exception OpenAndParseJobLink({url}) , exception message: {ex.Message}");
+        }
+        return res;
+    }
+
+
     private string ExtractEndDate()
     {
         string response = string.Empty;
@@ -313,7 +352,7 @@ public class CompanyContactsAPI
         return response;
     }
 
-   private async Task<string> ChatGPTSearchAsync(string prompt)
+    private async Task<string> ChatGPTSearchAsync(string prompt)
     {
         if (_chatService == null)
         {
@@ -348,9 +387,9 @@ public class CompanyContactsAPI
             return string.Empty;
         }
     }
-   private string ChatGPTSearch(string prompt)
-   { 
-        string response  = string.Empty;
+    private string ChatGPTSearch(string prompt)
+    {
+        string response = string.Empty;
         if (_chatService != null)
         {
             Console.WriteLine($"Using ChatGPT to extract Info, {prompt}");
@@ -365,10 +404,10 @@ public class CompanyContactsAPI
             }
         }
         return response;
-   }
+    }
 
 
-   private void ShowMore()
+    private void ShowMore()
     {
         try
         {
@@ -379,11 +418,11 @@ public class CompanyContactsAPI
                 // Wait for the button to be clickable using a lambda expression
                 IWebElement seeMoreButton = wait.Until(_driver =>
                     _driver.FindElement(By.CssSelector("button[aria-label='Click to see more description']")));
-                        
+
                 Console.WriteLine($"Found button area, Displayed: {seeMoreButton.Displayed}, Enabled: {seeMoreButton.Enabled}");
 
                 // Scroll into view if needed
-                var statusScroll =((IJavaScriptExecutor)_driver).ExecuteScript("arguments[0].scrollIntoView(true);", seeMoreButton);
+                var statusScroll = ((IJavaScriptExecutor)_driver).ExecuteScript("arguments[0].scrollIntoView(true);", seeMoreButton);
                 Console.WriteLine($"ExecuteScript for scroll into: {seeMoreButton.Displayed}, Enabled: {seeMoreButton.Enabled}, status scroll {statusScroll}");
 
                 var statusClick = ((IJavaScriptExecutor)_driver).ExecuteScript("arguments[0].click();", seeMoreButton);
@@ -410,14 +449,14 @@ public class CompanyContactsAPI
         }
     }
 
-   private static void WaitForDocumentReady(WebDriverWait wait)
+    private static void WaitForDocumentReady(WebDriverWait wait)
     {
         bool IsDocumentReady = wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
     }
 
-    private string ExtractUsingRegexp(string input, string regExp, int useGroupIndex=1)
+    private string ExtractUsingRegexp(string input, string regExp, int useGroupIndex = 1)
     {
-        string res= string.Empty;
+        string res = string.Empty;
         var match = Regex.Match(input, regExp, RegexOptions.IgnoreCase);
 
         if (match.Success)
@@ -431,6 +470,86 @@ public class CompanyContactsAPI
         }
         return res;
     }
+
+
+    /// <summary>
+    /// Use for https://www.linkedin.com/search/results/all/?keywords=
+    /// </summary>
+    /// <param name="companyName"></param>
+    /// <param name="keyWord"></param>
+    /// <returns></returns>
+    /// 
+    private List<PeopleLinkedInDetail> ExtractLinkedInPersons(string companyName, string keyWord)
+    {
+        List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
+        // Use [attribute="value"] CSS selector for data-view-name
+        var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
+
+        foreach (var card in userCards)
+        {
+                try
+                {
+                    // Extract job title text
+                    var titleElement = card.FindElement(By.CssSelector("div.t-14.t-black.t-normal"));
+                    var titleText = titleElement.Text;
+
+                    if (titleText.Contains(keyWord, StringComparison.OrdinalIgnoreCase) &&
+                        titleText.Contains(companyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Find LinkedIn profile link
+                        var linkElement = card.FindElement(By.CssSelector("a[href*='linkedin.com/in/']"));
+                        string profileUrl = linkElement.GetAttribute("href");;
+                        Console.WriteLine("Match found: " + profileUrl);
+                        Console.WriteLine("titleText : " + titleText);
+                        // div class mb1   div.mb1 
+
+                        var mb1Div = card.FindElement(By.CssSelector("div.mb1"));
+                        var mb1Text = mb1Div.Text;
+                        Console.WriteLine("mb1: " + mb1Text);
+
+                        // Find the span with aria-hidden="true"
+                        var nameElement = driver.FindElement(By.CssSelector("span[aria-hidden='true']"));
+                        string nameText = nameElement.Text;
+                        
+                        var nameElementXPath = driver.FindElement(By.XPath("//span[@aria-hidden='true']"));
+                        string nameTextXPath = nameElementXPath.Text;
+
+
+                        Console.WriteLine("Name: " + nameText);
+                        Console.WriteLine("nameTextXPath: " + nameTextXPath);
+
+                        string cardText = card.Text;
+                        Console.WriteLine(" card.Text: " + cardText);
+                        
+                        res.Add(new PeopleLinkedInDetail
+                        {
+                            CompanyName = companyName,
+                            OrgNumber = string.Empty, // Org number not available in this context
+                            LinkedInLink = profileUrl,
+                            Email = string.Empty, // Email not available in this context
+                            Title = titleText,
+                            Name = nameText
+                        });
+                    }
+                }
+                catch (NoSuchElementException)
+                {
+                    // Skip cards missing expected elements
+                    continue;
+                }
+        }
+        return res;
+    }
+    private string ExtractPersonName(string companyName, string keyWord)
+    {
+        string res = string.Empty;
+        // Use [attribute="value"] CSS selector for data-view-name
+        var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
+
+
+        return res;
+    }
+
 
     private string ParseCompanyNameFromText(string input)
     {

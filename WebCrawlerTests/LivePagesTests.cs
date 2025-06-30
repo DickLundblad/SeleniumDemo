@@ -9,19 +9,21 @@ namespace WebCrawler
     {
         private ChromeDriver driver; // Changed type from IWebDriver to ChromeDriver for improved performance
         private JobListingsApi _api;
+        private CompanyContactsAPI _companyAPI;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
            driver = (ChromeDriver)ChromeDebugger.StartChromeInDebugMode();
             _api = new JobListingsApi(driver);
+            _companyAPI = new CompanyContactsAPI(driver);
         }
 
         [Category("live")]
         [TestCase("https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&page=1&county=Sk%C3%A5ne", "//div[@data-p-stats]")]
         [TestCase("https://jobbsafari.se/lediga-jobb/kategori/data-och-it?sort_by=newest", "//li[starts-with(@id, 'jobentry-')]")]
         [TestCase("https://se.indeed.com/?from=jobsearch-empty-whatwhere", "//*[starts-with(@data-testid, 'slider_item')]")]
-        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]")]
+        [TestCase("https://se.jooble.org/SearchResult", "//*[starts-with(@data-test-name, '_jobCard')]")]   
         [TestCase("https://www.monster.se/jobb/sok?q=mjukvara&where=Sk%C3%A5ne&page=1&so=m.s.lh", "//*[@data-testid='jobTitle']", 2000)]
         [TestCase("https://www.linkedin.com/jobs/collections/it-services-and-it-consulting", "//div[@data-job-id]")]
         public void ValidateThatStartPageIsLoaded(string url, string selectorXPathForJobEntry, int delayUserInteraction = 0)
@@ -184,25 +186,30 @@ namespace WebCrawler
         }
 
         [Category("live")]
-        [TestCase("Connectitude AB","CEO", "CTO", 0)]
-        public void ValidateLinkedINSearchForCompany(string companyName, string role1, string role2, int delayUserInteraction = 0)
+        [TestCase("Connectitude AB","CTO", "Joel Fjordén", 2000)]
+        [TestCase("Connectitude AB", "CEO", "Richard Houltz", 2000)]
+        public void ValidateLinkedINSearchForCompany(string companyName, string role1, string expectedName, int delayUserInteraction = 0)
         {
             string companyLinkedInUrl = "";//_api.FindCompanyOnLinkedIn(companyName, delayUserInteraction);
             var searchUrl = string.Empty;
-            var res = string.Empty;
+          
 
             if (string.IsNullOrEmpty(companyLinkedInUrl))
             {
-                ///https://www.linkedin.com/search/results/all/?keywords=Connectitude%20AB&origin=GLOBAL_SEARCH_HEADER&sid=nFi
                 searchUrl = $"https://www.linkedin.com/search/results/all/?keywords={Uri.EscapeDataString(companyName)}&origin=GLOBAL_SEARCH_HEADER&sid=nFi";
             }
             else 
             {
+                searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}%20AB&sid=1ng";
+                //searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}CLUSTER_EXPANSION&sid=0AM";
                 searchUrl = companyLinkedInUrl+"people/";
             }
 
             // look for role1 or role2 in the search results
-            res = _api.OpenAndParseLinkedInForPeople(searchUrl, companyName, role1, role2, delayUserInteraction);
+            var res = _companyAPI.OpenAndParseLinkedInForPeople(searchUrl, companyName, role1, delayUserInteraction);
+            Assert.That(res.Count, Is.GreaterThan(0), "No people found");
+            Assert.That(res[0].Name, Is.EqualTo(expectedName), "No people found");
+
 
         }
 

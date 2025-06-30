@@ -2,8 +2,9 @@ using DocumentFormat.OpenXml.Bibliography;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
-using WebCrawler.Models;
+using System.ComponentModel;
 using WebCrawler;
+using WebCrawler.Models;
 
 public class JobListingsApi
 {
@@ -116,42 +117,6 @@ public class JobListingsApi
         }
     }
 
-    private string ExtractPersonDetail(string companyName, string keyWord)
-    {
-        string res = string.Empty;
-        // Use [attribute="value"] CSS selector for data-view-name
-        var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
-
-        foreach (var card in userCards)
-        {
-            try
-            {
-                // Extract job title text
-                var titleElement = card.FindElement(By.CssSelector("div.t-14.t-black.t-normal"));
-                var titleText = titleElement.Text;
-
-                if (titleText.Contains(keyWord, StringComparison.OrdinalIgnoreCase) &&
-                    titleText.Contains(companyName, StringComparison.OrdinalIgnoreCase))
-                {
-                    // Find LinkedIn profile link
-                    var linkElement = card.FindElement(By.CssSelector("a[href*='linkedin.com/in/']"));
-                    string profileUrl = linkElement.GetAttribute("href");
-                    res = profileUrl;
-                    Console.WriteLine("Match found: " + profileUrl);
-                    Console.WriteLine("titleText : " + titleText);
-                    return res;
-                   // Exit after first match
-                }
-            }
-            catch (NoSuchElementException)
-            {
-                // Skip cards missing expected elements
-                continue;
-            }
-        }
-
-        return res;
-    }
 
     private string ExtractTitle()
     {
@@ -279,46 +244,42 @@ public class JobListingsApi
         return "https://www.linkedin.com/company/connectitude/";
 
     }
-    public string OpenAndParseLinkedInForPeople(string url, string companyName, string role1, string role2, int delayUserInteraction, CancellationToken cancellationToken = new CancellationToken())
-    {
+    //public PeopleLinkedInDetail OpenAndParseLinkedInForPeople(string url, string companyName, string role1, string role2, int delayUserInteraction, CancellationToken cancellationToken = new CancellationToken())
+    //{
 
-        string res = string.Empty;
-        try
-        {
-            ((IJavaScriptExecutor)_driver).ExecuteScript("window.open();");
-            _driver.SwitchTo().Window(_driver.WindowHandles.Last());
-            _driver.Navigate().GoToUrl(url);
-            AcceptPopups();
-            Thread.Sleep(delayUserInteraction);
-            cancellationToken.ThrowIfCancellationRequested();
-            WebDriverWait wait = new(_driver, TimeSpan.FromSeconds(10));
-            try
-            {
-                WaitForDocumentReady(wait);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error during WaitForDocumentReady() : {ex.Message}");
-            }
-            if (BlockedInfoOnPage())
-            {
-                Console.WriteLine($"Blocked on jobLink page: {url}");
-            }
+    //    string res = string.Empty;
+    //    try
+    //    {
+    //        ((IJavaScriptExecutor)_driver).ExecuteScript("window.open();");
+    //        _driver.SwitchTo().Window(_driver.WindowHandles.Last());
+    //        _driver.Navigate().GoToUrl(url);
+    //        AcceptPopups();
+    //        Thread.Sleep(delayUserInteraction);
+    //        cancellationToken.ThrowIfCancellationRequested();
+    //        WebDriverWait wait = new(_driver, TimeSpan.FromSeconds(10));
+    //        try
+    //        {
+    //            WaitForDocumentReady(wait);
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            Console.WriteLine($"Error during WaitForDocumentReady() : {ex.Message}");
+    //        }
+    //        if (BlockedInfoOnPage())
+    //        {
+    //            Console.WriteLine($"Blocked on jobLink page: {url}");
+    //        }
 
-            // extract info on page
-            res = ExtractPeopleWithKeyword(role1);
-            res += ExtractPeopleWithKeyword(role2);
-            res += ExtractPersonDetail(companyName, role1);
-            res += ExtractPersonDetail(companyName, role2);
+    //        ExtractLinkedInPersons(companyName, role1, role2, delayUserInteraction, cancellationToken);
 
 
-         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Warning Exception OpenAndParseJobLink({url}) , exception message: {ex.Message}");
-        }
-        return res;
-    }
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine($"Warning Exception OpenAndParseJobLink({url}) , exception message: {ex.Message}");
+    //    }
+    //    return res;
+    //}
     public JobListing OpenAndParseJobLink(string url, int delayUserInteraction,  CancellationToken cancellationToken = new CancellationToken())
     {
         var jobListing = new JobListing();
