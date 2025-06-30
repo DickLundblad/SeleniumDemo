@@ -43,7 +43,7 @@ namespace WebCrawler
         {
             string? orgNbr = string.Empty;
             //string orgNbrXPath = "//span[text()='Org.nr']";
-            string orgNbrXPath = "//span[span[text()='Org.nr']]"; 
+            string orgNbrXPath = "//span[span[text()='Org.nr']]";
             try
             {
                 //Console.WriteLine("temp: " + temp);
@@ -198,10 +198,10 @@ namespace WebCrawler
             var resList = new List<JobListing>();
             foreach (var job in list)
             {
-                if( job.Refresh == true)
+                if (job.Refresh == true)
                 {
                     resList.Add(job);
-                }   
+                }
             }
             return resList;
         }
@@ -217,6 +217,60 @@ namespace WebCrawler
             return newList
                 .Where(newJob => !existingList.Any(existingJob => existingJob.JobLink == newJob.JobLink))
                 .ToList();
+        }
+
+        public static void WriteListOfLinkedInPeopleToFile(List<PeopleLinkedInDetail> results, string filePath, string subFolder = "")
+        {
+            if (!filePath.EndsWith(RESULT_FILE_ENDING))
+            {
+                filePath += RESULT_FILE_ENDING;
+            }
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                EnsureFolderExists(subFolder);
+                filePath = Path.Combine(subFolder, filePath);
+            }
+
+
+            foreach (var jobListing in results)
+            {
+                //Console.WriteLine($"NumberOfEmployes: {jobListing.NumberOfEmployes}, Description: {jobListing.Description}, CompanyName: {jobListing.CompanyName}");
+            }
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
+            };
+
+            using (var writer = new StreamWriter(filePath))
+            using (var csv = new CsvWriter(writer, config))
+            {
+                csv.WriteHeader<PeopleLinkedInDetail>();
+                csv.NextRecord();
+                foreach (var jobListing in results)
+                {
+                    // Remove invalid characters
+                    jobListing.CompanyName = RemoveInvalidChars(jobListing.CompanyName);
+                    if (!string.IsNullOrEmpty(jobListing.LinkedInLink))
+                    {
+                        csv.WriteRecord(jobListing);
+                        csv.NextRecord();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"LinkedInLink is empty for LinkedinPeople CompanyName: {jobListing.CompanyName}");
+                    }
+                }
+            }
+
+            Console.WriteLine($"CSV file created: {filePath}");
+            using (var reader = new StreamReader(filePath))
+            using (var csvR = new CsvReader(reader, config))
+            {
+                var records = csvR.GetRecords<PeopleLinkedInDetail>().ToList();
+                //Assert.That(records.Count, Is.GreaterThan(0), "The  file does not contain any job listings.");
+                Console.WriteLine($"Validated that the file contains {records.Count} company listings.");
+            }
         }
 
         public static void WriteListOfCompaniesToFile(List<CompanyListing> results, string filePath, string subFolder = "")

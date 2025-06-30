@@ -1,4 +1,5 @@
-﻿using OpenQA.Selenium;
+﻿using NUnit.Framework.Constraints;
+using OpenQA.Selenium;
 using WebCrawler.Models;
 using static JobListingsApi;
 
@@ -46,6 +47,22 @@ namespace WebCrawler
         {
             _api.CrawlStartPageForCompany_Details_WriteToFile(url, selectorXPathForJobEntry,"", fileName, addDomainToJobPaths, delayUserInteraction, removeParams);
         }
+
+        [Category("live")]
+        [TestCase("Connectitude AB", "CTO", "Joel Fjordén", 2000)]
+        public void OpenAndParseLinkedInForPeople_WriteToFile(string companyName, string role, string expectedName, int delayUserInteraction = 0)
+        {
+            var randomName = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var fileName = "OpenAndParseLinkedInForPeople_WriteToFile"+ "_" + randomName;
+            var searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}%20&sid=1ng";
+            _api.ParseLinkeInForPeopleForRole_WriteToFile(searchUrl, companyName, role,fileName, delayUserInteraction);
+            var fileAndPath = "LinkedInPeople//" + fileName + ".csv";
+            Assert.That(File.Exists(fileAndPath), Is.True, "File should be created after parsing LinkedIn for people.");
+        }
+
+        // Assert that https://www.linkedin.com/company/connectitude/ can be found
+
+
 
 
         [Category("live")]

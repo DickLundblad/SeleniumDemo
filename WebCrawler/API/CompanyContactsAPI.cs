@@ -2,6 +2,7 @@ using DocumentFormat.OpenXml.Bibliography;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Support.UI;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using WebCrawler;
 using WebCrawler.Models;
@@ -10,7 +11,8 @@ public class CompanyContactsAPI
 {
     private IWebDriver _driver;
     private ChatGPTService? _chatService;
-    private const string DEFAULT_SUBFOLDER = "CompanyListings";
+    private const string DEFAULT_SUBFOLDER_CompanyListing = "CompanyListings";
+    private const string DEFAULT_SUBFOLDER_LINKEDIN_PEOPLE = "LinkedInPeople";
 
     public IWebDriver driver => _driver;
 
@@ -35,7 +37,7 @@ public class CompanyContactsAPI
         List<CompanyListing> liveJobListings = OpenAndExtractCompanyListings(url, selectorXPathForJobEntry, selectorCSSPath, addDomainToJobPaths, delayUserInteraction, removeParams, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
-        SeleniumTestsHelpers.WriteListOfCompaniesToFile(liveJobListings, fileName, DEFAULT_SUBFOLDER);
+        SeleniumTestsHelpers.WriteListOfCompaniesToFile(liveJobListings, fileName, DEFAULT_SUBFOLDER_CompanyListing);
     }
 
     /// <summary>
@@ -54,7 +56,7 @@ public class CompanyContactsAPI
     {
         List<CompanyListing> liveJobListings = OpenAndExtractCompanyListings(url, selectorXPathForJobEntry, selectorCSSPath, addDomainToJobPaths, delayUserInteraction, removeParams, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
-        var savedCompanyListings = SeleniumTestsHelpers.LoadCompanyListingsFromFile(fileName, DEFAULT_SUBFOLDER);
+        var savedCompanyListings = SeleniumTestsHelpers.LoadCompanyListingsFromFile(fileName, DEFAULT_SUBFOLDER_CompanyListing);
         var newCompanyListings = SeleniumTestsHelpers.ExtractUniqueCompanyListings(liveJobListings, savedCompanyListings.CompanyListingsList);
         // find any lines that has been marked for Refresh
         var exisingCompanyListingsToUpdate = SeleniumTestsHelpers.GetCompanyListingsToUpdate(savedCompanyListings.CompanyListingsList);
@@ -77,7 +79,7 @@ public class CompanyContactsAPI
                 companyListing.Refresh = false;*/
             }
             var mergedList = SeleniumTestsHelpers.MergeCompanyListingsIgnoreAlreadyExisting(newCompanyListings, savedCompanyListings.CompanyListingsList);
-            SeleniumTestsHelpers.WriteListOfCompaniesToFile(mergedList, fileName, DEFAULT_SUBFOLDER);
+            SeleniumTestsHelpers.WriteListOfCompaniesToFile(mergedList, fileName, DEFAULT_SUBFOLDER_CompanyListing);
             returnMessage += $"Existing nbr of Listings was {savedCompanyListings.CompanyListingsList.Count}, adding {newCompanyListings.Count}";
         }
         else
@@ -105,17 +107,22 @@ public class CompanyContactsAPI
                 companyListing.Refresh = false;
             }
             var mergedList = SeleniumTestsHelpers.MergeCompanyListingsOverWriteAlreadyExisting(newCompanyListings, savedCompanyListings.CompanyListingsList);
-            SeleniumTestsHelpers.WriteListOfCompaniesToFile(mergedList, fileName, DEFAULT_SUBFOLDER);
+            SeleniumTestsHelpers.WriteListOfCompaniesToFile(mergedList, fileName, DEFAULT_SUBFOLDER_CompanyListing);
             returnMessage += $" Existing nbr of Listings was {savedCompanyListings.CompanyListingsList.Count}, updating {exisingCompanyListingsToUpdate.Count} of them since they were marked for update";
         }
 
         return returnMessage;
     }
 
-    public void MergeResultFilesToExcelFile(string fileName, string[] files)
+
+    public void ParseLinkeInForPeopleForRole_WriteToFile(string url, string companyName, string role, string fileName, int delayUserInteraction = 0)
     {
-        SeleniumTestsHelpers.CreateExcelFromExistingFiles(fileName, files);
+        var res = OpenAndParseLinkedInForPeople(url, companyName, role, delayUserInteraction); 
+        SeleniumTestsHelpers.WriteListOfLinkedInPeopleToFile(res, fileName, DEFAULT_SUBFOLDER_LINKEDIN_PEOPLE);
+
     }
+
+
 
     public void Dispose()
     {
@@ -482,7 +489,6 @@ public class CompanyContactsAPI
     private List<PeopleLinkedInDetail> ExtractLinkedInPersons(string companyName, string keyWord)
     {
         List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
-        // Use [attribute="value"] CSS selector for data-view-name
         var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
 
         foreach (var card in userCards)
@@ -499,28 +505,14 @@ public class CompanyContactsAPI
                         // Find LinkedIn profile link
                         var linkElement = card.FindElement(By.CssSelector("a[href*='linkedin.com/in/']"));
                         string profileUrl = linkElement.GetAttribute("href");;
-                        Console.WriteLine("Match found: " + profileUrl);
-                        Console.WriteLine("titleText : " + titleText);
-                        // div class mb1   div.mb1 
+                        if (! string.IsNullOrEmpty(profileUrl) && profileUrl.Contains('?'))
+                        { 
+                            profileUrl = profileUrl.Split('?')[0]; // Remove any query parameters
+                        }
 
                         var mb1Div = card.FindElement(By.CssSelector("div.mb1"));
                         var mb1Text = mb1Div.Text;
-                        Console.WriteLine("mb1: " + mb1Text);
-
-                        // Find the span with aria-hidden="true"
-                        var nameElement = driver.FindElement(By.CssSelector("span[aria-hidden='true']"));
-                        string nameText = nameElement.Text;
-                        
-                        var nameElementXPath = driver.FindElement(By.XPath("//span[@aria-hidden='true']"));
-                        string nameTextXPath = nameElementXPath.Text;
-
-
-                        Console.WriteLine("Name: " + nameText);
-                        Console.WriteLine("nameTextXPath: " + nameTextXPath);
-
-                        string cardText = card.Text;
-                        Console.WriteLine(" card.Text: " + cardText);
-                        
+                        string nameText = mb1Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)[0];
                         res.Add(new PeopleLinkedInDetail
                         {
                             CompanyName = companyName,

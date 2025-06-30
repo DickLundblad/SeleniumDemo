@@ -213,6 +213,20 @@ namespace WebCrawler
 
         }
 
+        [Category("live")]
+        [TestCase("Connectitude AB", "CTO", "Joel Fjordén", 2000)]
+        public void ValidateLinkedINSearchForCompanyWriteToFile(string companyName, string role1, string expectedName, int delayUserInteraction = 0)
+        {
+             var  searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}%20AB&sid=1ng";
+
+            // look for role1 or role2 in the search results
+            var res = _companyAPI.OpenAndParseLinkedInForPeople(searchUrl, companyName, role1, delayUserInteraction);
+            Assert.That(res.Count, Is.GreaterThan(0), "No people found");
+            Assert.That(res[0].Name, Is.EqualTo(expectedName), "No people found");
+
+
+        }
+
         [OneTimeTearDown]
         public void TearDown()
         {
