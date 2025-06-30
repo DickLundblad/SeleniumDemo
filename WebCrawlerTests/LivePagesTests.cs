@@ -189,7 +189,6 @@ namespace WebCrawler
         [TestCase("Connectitude AB", "CEO", "Richard Houltz", 2000)]
         public void ValidateLinkedINSearchForCompany(string companyName, string role, string expectedName, int delayUserInteraction = 0)
         {
-
             var searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}{Uri.EscapeDataString(" ")}{role}&origin=GLOBAL_SEARCH_HEADER";
 
             var res = _companyAPI.OpenAndParseLinkedInForPeople(searchUrl, companyName, role, delayUserInteraction);
@@ -199,18 +198,14 @@ namespace WebCrawler
 
         [Category("live")]
         [TestCase("Connectitude AB", "CTO", "Joel Fjordén", 2000)]
-        [TestCase("Connectitude AB", "EOO", "Joel Fjordén", 2000)]
+        [TestCase("Connectitude AB", "CEO", "Richard Houltz", 2000)]
         public void ValidateLinkedINSearchForCompanyWriteToFile(string companyName, string role, string expectedName, int delayUserInteraction = 0)
         {
-            //var  searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}%20&sid=1ng";
-            var searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}&{role}&origin=GLOBAL_SEARCH_HEADER";
-
+            var searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}{Uri.EscapeDataString(" ")}{role}&origin=GLOBAL_SEARCH_HEADER";
 
             var res = _companyAPI.OpenAndParseLinkedInForPeople(searchUrl, companyName, role, delayUserInteraction);
             Assert.That(res.Count, Is.GreaterThan(0), "No people found");
             Assert.That(res[0].Name, Is.EqualTo(expectedName), "No people found");
-
-
         }
 
         [OneTimeTearDown]

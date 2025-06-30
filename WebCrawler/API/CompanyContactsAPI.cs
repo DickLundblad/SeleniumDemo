@@ -303,8 +303,14 @@ public class CompanyContactsAPI
         return companyListings;
     }
 
+    public List<PeopleLinkedInDetail> OpenAndParseLinkedInForPeople(string companyName, string role, int delayUserInteraction, CancellationToken cancellationToken = new CancellationToken())
+    {
+        // Use the LinkedIn search URL format for people
+        string url = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}{Uri.EscapeDataString(" ")}{role}&origin=GLOBAL_SEARCH_HEADER";
+        return OpenAndParseLinkedInForPeople(url, companyName, role, delayUserInteraction, cancellationToken);
+    }
 
-    public List<PeopleLinkedInDetail> OpenAndParseLinkedInForPeople(string url, string companyName, string role1, int delayUserInteraction, CancellationToken cancellationToken = new CancellationToken())
+    public List<PeopleLinkedInDetail> OpenAndParseLinkedInForPeople(string url, string companyName, string role, int delayUserInteraction, CancellationToken cancellationToken = new CancellationToken())
     {
 
         List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
@@ -330,7 +336,7 @@ public class CompanyContactsAPI
             {
                 Console.WriteLine($"Blocked on jobLink page: {url}");
             }
-            res = ExtractLinkedInPersons(companyName, role1);
+            res = ExtractLinkedInPersons(companyName, role);
 
 
         }
@@ -545,9 +551,15 @@ public class CompanyContactsAPI
 
     private string TrimCompanyNameWithoutCompanyForm(string companyName)
     {
-        var cleaned = companyName.Remove(companyName.IndexOf(" AB", StringComparison.OrdinalIgnoreCase), 3).Trim();
-
-        return cleaned;
+        if(companyName.Contains(" AB"))
+        {
+            companyName = companyName.Remove(companyName.IndexOf(" AB", StringComparison.OrdinalIgnoreCase), 3).Trim();
+        }
+        if (companyName.Contains(" Aktiebolag"))
+        {
+            companyName = companyName.Remove(companyName.IndexOf(" Aktiebolag", StringComparison.OrdinalIgnoreCase), 3).Trim();
+        }
+        return companyName;
     }
 
 

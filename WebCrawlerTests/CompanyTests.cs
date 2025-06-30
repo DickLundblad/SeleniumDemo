@@ -87,7 +87,7 @@ namespace WebCrawler
             string newFile = $"{newFileName}_{timestamp}.csv";
             CompanyListings allCompaniesListings = SeleniumTestsHelpers.LoadCompanyListingsFromFile(existingFile);
 
-            // read file
+            // create result file
             CompanyListings filteredCompanyListings = new("FilteredCompanies", existingFile);
             // use filter on an existing file to create a new file with only the filtered items
             foreach (var company in allCompaniesListings.CompanyListingsList)

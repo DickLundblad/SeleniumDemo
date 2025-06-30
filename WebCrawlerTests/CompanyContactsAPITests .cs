@@ -82,6 +82,43 @@ namespace WebCrawler
         }
 
 
+
+        [TestCase("merged_filter_emp_and_turnover_applied.csv", "LinkedInPeople",  2000)]
+        public void ParseCompanyFileAndFindLinkedInPeople(string existingFile, string newFileName, int delayUserInteraction = 0)
+        {
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string newFile = $"{newFileName}_{timestamp}.csv";
+            CompanyListings allCompaniesListings = SeleniumTestsHelpers.LoadCompanyListingsFromFile(existingFile);
+
+            // create result file
+            PeopleLinkedInDetails peopleList = new("FilteredCompanies");
+            int count = 0;
+            foreach (var company in allCompaniesListings.CompanyListingsList)
+            {
+                count++;
+                if (count >3)
+                {
+                    break;
+                }
+                /* if (string.IsNullOrEmpty(company.LinkedInLink) || company.LinkedInLink == "N/A")
+                 {
+                     Console.WriteLine($"Company {company.CompanyName} with OrgNumber {company.OrgNumber} has no LinkedIn link and will not be included in the list of people.");
+                     continue;
+                 }*/
+                // Parse LinkedIn for people
+                var trimmedCompanyName = company.CompanyName.Trim();
+
+                var peopleDetailsCEO = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, "CEO", delayUserInteraction);
+                peopleList.CompanyListingsList.AddRange(peopleDetailsCEO);
+
+                var peopleDetailsCTO = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, "CTO", delayUserInteraction);
+                peopleList.CompanyListingsList.AddRange(peopleDetailsCTO);
+
+
+            }
+            SeleniumTestsHelpers.WriteToFile(peopleList, newFile);
+        }
+
         [OneTimeTearDown]
         public void CloseChrome() 
         {
