@@ -96,9 +96,9 @@ namespace WebCrawler
             foreach (var company in allCompaniesListings.CompanyListingsList)
             {
                 count++;
-                if (count >3)
+                if (count % 5 == 4 )
                 {
-                    break;
+                    Thread.Sleep(1000*10);
                 }
                 /* if (string.IsNullOrEmpty(company.LinkedInLink) || company.LinkedInLink == "N/A")
                  {
