@@ -490,6 +490,7 @@ public class CompanyContactsAPI
     {
         List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
         var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
+        var companyNameWithoutCompanyForm = TrimCompanyNameWithoutCompanyForm(companyName);
 
         foreach (var card in userCards)
         {
@@ -500,7 +501,7 @@ public class CompanyContactsAPI
                     var titleText = titleElement.Text;
 
                     if (titleText.Contains(keyWord, StringComparison.OrdinalIgnoreCase) &&
-                        titleText.Contains(companyName, StringComparison.OrdinalIgnoreCase))
+                        titleText.Contains(companyNameWithoutCompanyForm, StringComparison.OrdinalIgnoreCase))
                     {
                         // Find LinkedIn profile link
                         var linkElement = card.FindElement(By.CssSelector("a[href*='linkedin.com/in/']"));
@@ -540,6 +541,13 @@ public class CompanyContactsAPI
 
 
         return res;
+    }
+
+    private string TrimCompanyNameWithoutCompanyForm(string companyName)
+    {
+        var cleaned = companyName.Remove(companyName.IndexOf(" AB", StringComparison.OrdinalIgnoreCase), 3).Trim();
+
+        return cleaned;
     }
 
 
