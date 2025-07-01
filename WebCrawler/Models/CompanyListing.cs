@@ -7,7 +7,7 @@
         public string CompanyName { get; set; } = string.Empty;
         public string SourceLink { get; set; } = string.Empty;
         public int Turnover { get; set; } = 0;
-        public string TurnoverYear { get; set; } = string.Empty;
+        public int TurnoverYear { get; set; } = 0;
         public int NumberOfEmployes { get; set; } = 0;
         public string Adress { get; set; } = string.Empty;
         //VistingAdress

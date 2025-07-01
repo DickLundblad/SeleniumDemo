@@ -1,4 +1,6 @@
-﻿using WebCrawler.Models;
+﻿using OpenQA.Selenium.DevTools.V133.Network;
+using WebCrawler.Mappers;
+using WebCrawler.Models;
 
 namespace WebCrawler
 {
@@ -170,6 +172,68 @@ namespace WebCrawler
             Assert.That(res.Count, Is.EqualTo(2), "The merged list should only contain the 2 job listings.");
             Assert.That(res.FirstOrDefault(e=> e.JobLink == jobLink1).ContactInformation, Is.EquivalentTo(updatedContactInformation), "Contact information from the new JobListing should  be used.");
         }
-        
+
+        [Test]
+        public void MergePeopleToCompany()
+        {
+            // create object programmatically
+            var company = new CompanyListing()
+            {
+                OrgNumber = "123456-7890",
+                CompanyName = "Test Company",
+                Description = "This is a test company.",
+                TurnoverYear = 2023,
+                Turnover = 1000000,
+                Adress = "Test Address",
+                SourceLink = "https://www.testcompany.com"
+            };
+            var companyListings = new CompanyListings("companyListings");
+            companyListings.InsertOrUpdate(company);
+
+            var peopleLinkedInDetail1 = new PeopleLinkedInDetail()
+            {
+                Name = "John Doe",
+                OrgNumber = "123456-7890",
+                Title = "CEO at Test Company",
+                LinkedInLink = "https://www.linkedin.com/company/1234567890",
+                CompanyName = "Test Company",
+            };
+            var peopleLinkedInDetail2 = new PeopleLinkedInDetail()
+            {
+                Name = "Jene Doe",
+                OrgNumber = "123456-7890",
+                Title = "CTO at Test Company",
+                LinkedInLink = "https://www.linkedin.com/company/123",
+                CompanyName = "Test Company",
+            };
+            var peopleLinkedInDetails = new PeopleLinkedInDetails("details");
+            peopleLinkedInDetails.InsertOrUpdate(peopleLinkedInDetail1);
+            peopleLinkedInDetails.InsertOrUpdate(peopleLinkedInDetail2);
+
+
+            var companyWithPeople = new CompanyWithPeople();
+
+            foreach (var companyListing in companyListings.CompanyListingsList)
+            {
+                // find people linked to the company
+                var peopleLinkedInDetailsList = peopleLinkedInDetails.PeopleLinkedInDetailsList
+                    .Where(p => p.CompanyName == companyListing.CompanyName).ToList();
+
+                var newItem = CompanyMapper.MapToCompanyWithPeople(companyListing,peopleLinkedInDetailsList);
+
+            }
+            
+            // Write to file
+        }
+
+        [TestCase("merged_filter_emp_and_turnover_applied.csv", "peopleDetail.csv","mergePeopleToCompany")]
+        public void MergePeopleToCompanyExistingFile(string existingCompanyFile, string existingPeopleDetailsFile, string newFileName)
+        {
+           // load file, turn into objects
+
+            // save to file
+
+            // load res file, compare
+        }
     }
 }

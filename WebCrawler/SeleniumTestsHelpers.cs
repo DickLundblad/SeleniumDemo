@@ -397,7 +397,7 @@ namespace WebCrawler
                 filePath = Path.Combine(subFolder, filePath);
             }
             // Log the job listings
-            foreach (var jobListing in results.CompanyListingsList)
+            foreach (var jobListing in results.PeopleLinkedInDetailsList)
             {
                // Console.WriteLine($"OrgNumber: {jobListing.OrgNumber}, Description: {jobListing.Description}, Description: {jobListing.Description}");
             }
@@ -412,7 +412,7 @@ namespace WebCrawler
             {
                 csv.WriteHeader<PeopleLinkedInDetail>();
                 csv.NextRecord();
-                foreach (var jobListing in results.CompanyListingsList)
+                foreach (var jobListing in results.PeopleLinkedInDetailsList)
                 {
                     // Remove invalid characters
                     jobListing.CompanyName = RemoveInvalidChars(jobListing.CompanyName);

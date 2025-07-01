@@ -110,6 +110,5 @@ namespace WebCrawler
             }
             SeleniumTestsHelpers.WriteToFile(filteredCompanyListings, newFile);
         }
-
     }
 }

@@ -123,11 +123,32 @@ public class CompanyContactsAPI
     }
 
 
-
     public void Dispose()
     {
-        driver.Quit();
-        driver.Dispose();
+        try
+        {
+            _driver?.Quit(); // ensures Chrome and chromedriver processes are terminated
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error while quitting driver: " + ex.Message);
+        }
+        finally
+        {
+            _driver?.Dispose();
+        }
+        // also kill andy "zombie" processes that might have been left behind
+        try
+        {
+            foreach (var process in System.Diagnostics.Process.GetProcessesByName("chromedriver"))
+            {
+                process.Kill();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error while killling chromedriver processes: " + ex.Message);
+        }
     }
 
 
@@ -608,12 +629,30 @@ public class CompanyContactsAPI
         return orgNbr;
     }
 
-    private string ParseTurnoverYearFromText(string input)
+    private int ParseTurnoverYearFromText(string input)
     {
         string regExp = @"OMSÄTTNING\s+(\d{4})\s*\n\s*([\d\s]+)";
-        string orgNbr = ExtractUsingRegexp(input, regExp).Trim();
+        string year = ExtractUsingRegexp(input, regExp).Trim();
 
-        return orgNbr;
+        if (!string.IsNullOrEmpty(year))
+        {
+            bool res = int.TryParse(year, out int yearAsInt);
+
+            if (res)
+            {
+                return yearAsInt;
+            }
+            else
+            {
+                Console.WriteLine($"Could not parse turnover amount from string: {year}");
+                return 0;
+            }
+        }
+        else
+        {
+            Console.WriteLine($"No turnover amount found in the input text: {input}");
+            return 0;
+        }
     }
 
     private int ParseTurnoverAmountFromText(string input)

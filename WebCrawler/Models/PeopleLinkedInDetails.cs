@@ -11,7 +11,7 @@
             this.Name = name;
         }
 
-        public List<PeopleLinkedInDetail> CompanyListingsList
+        public List<PeopleLinkedInDetail> PeopleLinkedInDetailsList
         {
             get { return companyListings; }
             set { companyListings = value; }

@@ -1,9 +1,5 @@
-﻿using NUnit.Framework.Constraints;
-using OpenQA.Selenium;
-using System;
+﻿using OpenQA.Selenium;
 using WebCrawler.Models;
-using static JobListingsApi;
-
 
 namespace WebCrawler
 {
@@ -18,7 +14,6 @@ namespace WebCrawler
            IWebDriver driverToUse = ChromeDebugger.StartChromeInDebugMode();
            _api  = new CompanyContactsAPI(driverToUse);
         }
-
 
         /// <summary>
         /// Add or update job listings to an existing file.
@@ -38,9 +33,7 @@ namespace WebCrawler
         {
             //Foreach JoblLink found on start URL
             List<CompanyListing> jobListingsOnPage = _api.OpenAndExtractCompanyListings(startUrl, selectorXPathForJobEntry, selectorCSS, addDomainToJobPaths, delayUserInteraction);
-
         }
-
 
         [Category("live")]
         [TestCase("https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&page=1&county=Sk%C3%A5ne", "//div[@data-p-stats]", "allabolag_se_data_sys_program_utveckling_skane", "")]
@@ -63,10 +56,6 @@ namespace WebCrawler
             Assert.That(File.Exists(fileAndPath), Is.True, "File should be created after parsing LinkedIn for people.");
         }
 
-        // Assert that https://www.linkedin.com/company/connectitude/ can be found
-
-
-
 
         [Category("live")]
         [TestCase(31,"https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&county=Sk%C3%A5ne", "//div[@data-p-stats]", "allabolag_se_data_sys_program_utveckling_skane", "")]
@@ -83,10 +72,9 @@ namespace WebCrawler
 
         [Category("live")]
         [TestCase("merged_filter_emp_and_turnover_applied.csv", "LinkedInPeople",  2000)]
-        public void ParseCompanyFileAndFindLinkedInPeople(string existingFile, string newFileName, int delayUserInteraction = 0)
+        public void ParseCompanyFileAndFindLinkedInPeople(string existingFile, string newFileName, int delayUserInteractionMs = 0, int batchSize = 5, int sleepBetweenBatchMs= 1000 * 10)
         {
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            string newFile = $"{newFileName}_{timestamp}.csv";
+            string newFile = GenerateFileName(newFileName);
             CompanyListings allCompaniesListings = SeleniumTestsHelpers.LoadCompanyListingsFromFile(existingFile);
 
             // create result file
@@ -95,7 +83,8 @@ namespace WebCrawler
             foreach (var company in allCompaniesListings.CompanyListingsList)
             {
                 count++;
-                if (count % 5 == 4 )
+                // load batch, then sleep
+                if (count % batchSize == batchSize -1 )
                 {
                     Thread.Sleep(1000*10);
                 }
@@ -103,19 +92,36 @@ namespace WebCrawler
                 // Parse LinkedIn for people
                 var trimmedCompanyName = company.CompanyName.Trim();
 
-                var peopleDetailsCEO = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, "CEO", delayUserInteraction);
-                peopleList.CompanyListingsList.AddRange(peopleDetailsCEO);
+                var peopleDetailsCEO = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, "CEO", delayUserInteractionMs);
+                peopleList.PeopleLinkedInDetailsList.AddRange(peopleDetailsCEO);
 
-                var peopleDetailsCTO = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, "CTO", delayUserInteraction);
-                peopleList.CompanyListingsList.AddRange(peopleDetailsCTO);
+                var peopleDetailsCTO = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, "CTO", delayUserInteractionMs);
+                peopleList.PeopleLinkedInDetailsList.AddRange(peopleDetailsCTO);
             }
             SeleniumTestsHelpers.WriteToFile(peopleList, newFile);
+        }
+
+        [Category("live")]
+        [TestCase("Connectitude AB", "https://www.linkedin.com/company/connectitude/")]
+        public void FindCompanyOnLinkedIn(string companyName, string expectedUrl)
+        {
+            // TOD replace with crawl methods
+            var res = "https://www.linkedin.com/company/connectitude/";
+
+            Assert.That(res, Is.EqualTo(expectedUrl), "The LinkedIn URL for the company should match the expected URL.");
         }
 
         [OneTimeTearDown]
         public void CloseChrome() 
         {
             _api?.Dispose();
+        }
+
+
+        private string GenerateFileName(string prefix, string fileEnding = ".csv")
+        {
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            return $"{prefix}_{timestamp}{fileEnding}";
         }
     }
 }

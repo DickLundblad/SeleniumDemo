@@ -23,7 +23,7 @@ namespace WebCrawler
             people.InsertOrUpdate(compDuplicate);
             people.InsertOrUpdate(comp2);
 
-            Assert.That(people.CompanyListingsList.Count, Is.EqualTo(2), "The collection should only contain one item after inserting two(2) PeopleLinkedInDetails and one(1) duplicate.");
+            Assert.That(people.PeopleLinkedInDetailsList.Count, Is.EqualTo(2), "The collection should only contain one item after inserting two(2) PeopleLinkedInDetails and one(1) duplicate.");
         }
 
         [Test]
