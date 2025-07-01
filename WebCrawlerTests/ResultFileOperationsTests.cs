@@ -200,7 +200,7 @@ namespace WebCrawler
             };
             var peopleLinkedInDetail2 = new PeopleLinkedInDetail()
             {
-                Name = "Jene Doe",
+                Name = "Jane Doe",
                 OrgNumber = "123456-7890",
                 Title = "CTO at Test Company",
                 LinkedInLink = "https://www.linkedin.com/company/123",
@@ -209,7 +209,6 @@ namespace WebCrawler
             var peopleLinkedInDetails = new PeopleLinkedInDetails("details");
             peopleLinkedInDetails.InsertOrUpdate(peopleLinkedInDetail1);
             peopleLinkedInDetails.InsertOrUpdate(peopleLinkedInDetail2);
-
 
             var companyWithPeople = new CompanyWithPeople();
 
@@ -220,7 +219,6 @@ namespace WebCrawler
                     .Where(p => p.CompanyName == companyListing.CompanyName).ToList();
 
                 var newItem = CompanyMapper.MapToCompanyWithPeople(companyListing,peopleLinkedInDetailsList);
-
             }
             
             // Write to file
