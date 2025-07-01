@@ -210,7 +210,7 @@ namespace WebCrawler
             peopleLinkedInDetails.InsertOrUpdate(peopleLinkedInDetail1);
             peopleLinkedInDetails.InsertOrUpdate(peopleLinkedInDetail2);
 
-            var companyWithPeople = new CompanyWithPeople();
+            var companyWithPeoples = new CompanyWithPeoples("companyWith people collection");
 
             foreach (var companyListing in companyListings.CompanyListingsList)
             {
@@ -219,19 +219,44 @@ namespace WebCrawler
                     .Where(p => p.CompanyName == companyListing.CompanyName).ToList();
 
                 var newItem = CompanyMapper.MapToCompanyWithPeople(companyListing,peopleLinkedInDetailsList);
+                companyWithPeoples.InsertOrUpdate(newItem);
             }
-            
+
             // Write to file
+            var randomName = Guid.NewGuid().ToString(); // Generate a random name
+            var fileName = $"MergePeopleToCompany{randomName}";
+            SeleniumTestsHelpers.WriteToFile(companyWithPeoples, fileName);
+
+            CompanyWithPeoples updatedJobListingsFromFile = SeleniumTestsHelpers.LoadCompanyWithPeoplesFromFile(fileName);
+            Assert.That(updatedJobListingsFromFile.CompanyWithPeopleList.Count, Is.EqualTo(1), "The re-loaded CompanyWithPeople from file does not contain the same number of objects.");
         }
 
         [TestCase("merged_filter_emp_and_turnover_applied.csv", "peopleDetail.csv","mergePeopleToCompany")]
         public void MergePeopleToCompanyExistingFile(string existingCompanyFile, string existingPeopleDetailsFile, string newFileName)
         {
-           // load file, turn into objects
+            var companyListings = SeleniumTestsHelpers.LoadCompanyListingsFromFile(existingCompanyFile);
+            var peopleLinkedInDetails = SeleniumTestsHelpers.LoadPeoplesFromFile(existingPeopleDetailsFile);
 
-            // save to file
 
-            // load res file, compare
+            var companyWithPeoples = new CompanyWithPeoples("companyWith people collection");
+
+            foreach (var companyListing in companyListings.CompanyListingsList)
+            {
+                // find people linked to the company
+                var peopleLinkedInDetailsList = peopleLinkedInDetails.PeopleLinkedInDetailsList
+                    .Where(p => p.CompanyName.Trim() == companyListing.CompanyName.Trim()).ToList();
+
+                var newItem = CompanyMapper.MapToCompanyWithPeople(companyListing, peopleLinkedInDetailsList);
+                companyWithPeoples.InsertOrUpdate(newItem);
+            }
+
+            // Write to file
+            var randomName = Guid.NewGuid().ToString(); // Generate a random name
+            var fileName = $"{newFileName}_{randomName}";
+            SeleniumTestsHelpers.WriteToFile(companyWithPeoples, fileName);
+
+            CompanyWithPeoples updatedJobListingsFromFile = SeleniumTestsHelpers.LoadCompanyWithPeoplesFromFile(fileName);
+            Assert.That(updatedJobListingsFromFile.CompanyWithPeopleList.Count, Is.EqualTo(98), "The re-loaded CompanyWithPeople from file does not contain the same number of objects.");
         }
     }
 }

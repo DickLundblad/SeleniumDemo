@@ -1,0 +1,52 @@
+﻿namespace WebCrawler.Models
+{
+    public class CompanyWithPeoples
+    {
+        private List<CompanyWithPeople> companyListings;
+        private string startPage;
+        private string name;
+
+        public CompanyWithPeoples(string name, string startPage="")
+        {
+            companyListings = new List<CompanyWithPeople>();
+            this.Name = name;
+            this.StartPage = startPage;
+        }
+
+        public List<CompanyWithPeople> CompanyWithPeopleList
+        {
+            get { return companyListings; }
+            set { companyListings = value; }
+        }
+
+        public string StartPage { get => startPage; set => startPage = value; }
+        public string Name { get => name; set => name = value; }
+
+        public bool InsertOrUpdate(CompanyWithPeople job)
+        {
+            var comparer = new CompanyListingComparer();
+            var existingCompany = companyListings.FirstOrDefault(j => comparer.Equals(j, job));
+
+            if (existingCompany != null)
+            {
+                // Update
+                existingCompany.Description = job.Description;
+                existingCompany.TurnoverYear = job.TurnoverYear;
+                existingCompany.Turnover = job.Turnover;
+                existingCompany.Adress = job.Adress;
+                existingCompany.CompanyName = job.CompanyName;
+                existingCompany.SourceLink = job.SourceLink;
+
+                Console.WriteLine($"Company updated: {job.OrgNumber}");
+                return true;
+            }
+            else
+            {
+                // Insert
+                companyListings.Add(job);
+                Console.WriteLine($"CompanyWithPeople added: {job.OrgNumber}");
+                return true;
+            }
+        }
+    }
+}

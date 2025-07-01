@@ -478,6 +478,52 @@ namespace WebCrawler
             Console.WriteLine($"file created: {filePath}");
         }
 
+        public static void WriteToFile(CompanyWithPeoples results, string filePath, string subFolder = "")
+        {
+            if (!filePath.EndsWith(RESULT_FILE_ENDING))
+            {
+                filePath += RESULT_FILE_ENDING;
+            }
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                EnsureFolderExists(subFolder);
+                filePath = Path.Combine(subFolder, filePath);
+            }
+            // Log the job listings
+            foreach (var jobListing in results.CompanyWithPeopleList)
+            {
+                Console.WriteLine($"OrgNumber: {jobListing.OrgNumber}, Description: {jobListing.Description}, Description: {jobListing.Description}");
+            }
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
+            };
+
+            using (var writer = new StreamWriter(filePath))
+            using (var csv = new CsvWriter(writer, config))
+            {
+                csv.WriteHeader<CompanyWithPeople>();
+                csv.NextRecord();
+                foreach (var jobListing in results.CompanyWithPeopleList)
+                {
+                    // Remove invalid characters
+                    jobListing.CompanyName = RemoveInvalidChars(jobListing.CompanyName);
+                    jobListing.Description = RemoveInvalidChars(jobListing.Description);
+                    if (!string.IsNullOrEmpty(jobListing.OrgNumber))
+                    {
+                        csv.WriteRecord(jobListing);
+                        csv.NextRecord();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"OrgNumber is empty for CompanyWithPeople : {jobListing.OrgNumber}");
+                    }
+                }
+            }
+            Console.WriteLine($"file created: {filePath}");
+        }
+
 
         public static void WriteToFile(JobListings results, string filePath, string subFolder = "")
         {
@@ -526,6 +572,96 @@ namespace WebCrawler
         }
 
 
+        public static PeopleLinkedInDetails LoadPeoplesFromFile(string fileName, string subFolder = "")
+        {
+            var nameWithoutFileExtension = Path.GetFileNameWithoutExtension(fileName);
+            var jobListings = new PeopleLinkedInDetails(nameWithoutFileExtension);
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
+                MissingFieldFound = null, // Ignore missing fields
+                HeaderValidated = null   // Ignore header validation
+            };
+            if (!fileName.EndsWith(RESULT_FILE_ENDING))
+            {
+                fileName += RESULT_FILE_ENDING;
+            }
+
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                fileName = Path.Combine(subFolder, fileName);
+            }
+            if (File.Exists(fileName))
+            {
+
+                using (var reader = new StreamReader(fileName))
+                using (var csv = new CsvReader(reader, config))
+                {
+                    try
+                    {
+                        jobListings.PeopleLinkedInDetailsList = csv.GetRecords<PeopleLinkedInDetail>().ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error reading file {fileName}: {ex.Message}");
+                        throw;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"File not found: {fileName}");
+            }
+
+            Console.WriteLine($"Loaded {jobListings.PeopleLinkedInDetailsList.Count} PeopleLinkedInDetails from file: {fileName}");
+            return jobListings;
+        }
+        public static CompanyWithPeoples LoadCompanyWithPeoplesFromFile(string fileName, string subFolder = "")
+        {
+            var nameWithoutFileExtension = Path.GetFileNameWithoutExtension(fileName);
+            var jobListings = new CompanyWithPeoples(nameWithoutFileExtension);
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = RESULT_FILE_COLUMN_SEPARATOR.ToString(),
+                MissingFieldFound = null, // Ignore missing fields
+                HeaderValidated = null   // Ignore header validation
+            };
+            if (!fileName.EndsWith(RESULT_FILE_ENDING))
+            {
+                fileName += RESULT_FILE_ENDING;
+            }
+
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                fileName = Path.Combine(subFolder, fileName);
+            }
+            if (File.Exists(fileName))
+            {
+
+                using (var reader = new StreamReader(fileName))
+                using (var csv = new CsvReader(reader, config))
+                {
+                    try
+                    {
+                        jobListings.CompanyWithPeopleList = csv.GetRecords<CompanyWithPeople>().ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error reading file {fileName}: {ex.Message}");
+                        throw;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"File not found: {fileName}");
+            }
+
+            Console.WriteLine($"Loaded {jobListings.CompanyWithPeopleList.Count} CompanyWithPeople from file: {fileName}");
+            return jobListings;
+        }
         public static CompanyListings LoadCompanyListingsFromFile(string fileName, string subFolder = "")
         {
             var nameWithoutFileExtension = Path.GetFileNameWithoutExtension(fileName);

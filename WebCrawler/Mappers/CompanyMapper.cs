@@ -24,6 +24,7 @@ namespace WebCrawler.Mappers
                 TurnoverYear = companyListing.TurnoverYear,
                 Turnover = companyListing.Turnover,
                 Adress = companyListing.Adress,
+                NumberOfEmployes = companyListing.NumberOfEmployes,
                 Refresh = false, // Default value, can be set later
             };
         }
@@ -38,6 +39,7 @@ namespace WebCrawler.Mappers
                 companyWithPeople.ContactLinkedIn1 = listOfPeople[0].LinkedInLink;
                 companyWithPeople.ContactTitle1 = listOfPeople[0].Title;
                 companyWithPeople.ContactName1 = listOfPeople[0].Name;
+                companyWithPeople.ContactRole1 = listOfPeople[0].Role;
 
                 if (listOfPeople.Count > 1)
                 {
@@ -45,6 +47,8 @@ namespace WebCrawler.Mappers
                     companyWithPeople.ContactLinkedIn2 = listOfPeople[1].LinkedInLink;
                     companyWithPeople.ContactTitle2 = listOfPeople[1].Title;
                     companyWithPeople.ContactName2 = listOfPeople[1].Name;
+                    companyWithPeople.ContactRole2 = listOfPeople[1].Role;
+
                 }
                 if (listOfPeople.Count > 2)
                 {

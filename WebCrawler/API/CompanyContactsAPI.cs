@@ -543,12 +543,13 @@ public class CompanyContactsAPI
                         string nameText = mb1Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)[0];
                         res.Add(new PeopleLinkedInDetail
                         {
-                            CompanyName = companyName,
+                            CompanyName = companyName.Trim(),
                             OrgNumber = string.Empty, // Org number not available in this context
                             LinkedInLink = profileUrl,
                             Email = string.Empty, // Email not available in this context
-                            Title = titleText,
-                            Name = nameText
+                            Title = titleText.Trim(),
+                            Name = nameText.Trim(),
+                            Role = keyWord.Trim()
                         });
                     }
                 }
