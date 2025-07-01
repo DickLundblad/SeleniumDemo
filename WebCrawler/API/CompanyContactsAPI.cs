@@ -559,6 +559,20 @@ public class CompanyContactsAPI
                     continue;
                 }
         }
+        if (res.Count ==0)
+        {             
+            Console.WriteLine($"No LinkedIn persons found for company: {companyName} with keyword: {keyWord}");
+        }
+        else
+        {
+            Console.WriteLine($"Found {res.Count} LinkedIn persons for company: {companyName} with keyword: {keyWord}");
+        }
+
+        if (res.Count == 1)
+        {
+            Console.WriteLine($"Only 1 LinkedIn persons found for company: {companyName} with keyword: {keyWord} was hoping for two");
+        }
+
         return res;
     }
     private string ExtractPersonName(string companyName, string keyWord)

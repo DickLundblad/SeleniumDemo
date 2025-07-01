@@ -6,20 +6,7 @@ namespace WebCrawler
     public class CompanyTests
     {
 
-        /// <summary>
-        /// Merge all files into one CSV file.
-        /// </summary>
-        /// <param name="inputFolder"></param>
-        [TestCase("CompanyListings")]
-        public void MergeAllCVFilesToOne(string inputFolder)
-        {
-            string testName = "TestMergeAllCVFilesToOne";
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            string fileName = $"{testName}_{timestamp}.csv";
-            SeleniumTestsHelpers.MergeAllCVFilesToOne(inputFolder, fileName);
-            var filePath = Path.Combine(SeleniumTestsHelpers.GetOutputFolderPath(), fileName);
-            Assert.That(File.Exists(filePath), Is.True, $"The merged file {fileName} was not created successfully.");
-        }
+
 
         [Test]
         public void ValidateThatDuplicatesCompaniesCantBeAddedToCollection()
@@ -64,6 +51,7 @@ namespace WebCrawler
         }
 
         [TestCase("merged.csv", "merged_removed_duplicate_OrgNbr")]
+        [TestCase("TestMergeAllCVFilesToOne_2025-07-01_14-47-58.csv", "merged_removed_duplicate_OrgNbr_2")]
         public void FilterExistingFile_RemoveDuplicateOrgNbr(string existingFile, string newFileName)
         {
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
@@ -81,6 +69,7 @@ namespace WebCrawler
         }
 
         [TestCase("merged.csv", "merged_filter_emp_and_turnover_applied")]
+        [TestCase("merged_removed_duplicate_OrgNbr_2_2025-07-01_14-52-02.csv", "merged_filter_turnover_100_billion_applied")]
         public void FilterExistingFile_NumberOfEmplyeesAndTurnover(string existingFile, string newFileName)
         {
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
@@ -92,21 +81,22 @@ namespace WebCrawler
             // use filter on an existing file to create a new file with only the filtered items
             foreach (var company in allCompaniesListings.CompanyListingsList)
             {
-                if (company.NumberOfEmployes > 2)
-                {
-                    if (company.Turnover > 1000)
+                //if (company.NumberOfEmployes > 2)
+                //{
+                    //100*1000 , the site use 1000 sek..so it's 100 billion SEK
+                    if (company.Turnover > 100*1000)
                     {
                         filteredCompanyListings.InsertOrUpdate(company);
                     }
                     else
                     {
-                        Console.WriteLine($"Company {company.CompanyName} with OrgNumber {company.OrgNumber} has Turnover less than 1000 and will not be included in the filtered list.");
+                        Console.WriteLine($"Company {company.CompanyName} with OrgNumber {company.OrgNumber} has Turnover less than 1000 ({company.Turnover}) tkr and will not be included in the filtered list.");
                     } 
-                }
+                /*}
                 else
                 {
                     Console.WriteLine($"Company {company.CompanyName} with OrgNumber {company.OrgNumber} has less than 2 employees and will not be included in the filtered list.");
-                }
+                }*/
             }
             SeleniumTestsHelpers.WriteToFile(filteredCompanyListings, newFile);
         }
