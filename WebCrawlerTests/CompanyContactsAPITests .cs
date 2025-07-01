@@ -81,8 +81,7 @@ namespace WebCrawler
             }
         }
 
-
-
+        [Category("live")]
         [TestCase("merged_filter_emp_and_turnover_applied.csv", "LinkedInPeople",  2000)]
         public void ParseCompanyFileAndFindLinkedInPeople(string existingFile, string newFileName, int delayUserInteraction = 0)
         {
@@ -100,11 +99,7 @@ namespace WebCrawler
                 {
                     Thread.Sleep(1000*10);
                 }
-                /* if (string.IsNullOrEmpty(company.LinkedInLink) || company.LinkedInLink == "N/A")
-                 {
-                     Console.WriteLine($"Company {company.CompanyName} with OrgNumber {company.OrgNumber} has no LinkedIn link and will not be included in the list of people.");
-                     continue;
-                 }*/
+
                 // Parse LinkedIn for people
                 var trimmedCompanyName = company.CompanyName.Trim();
 
@@ -113,8 +108,6 @@ namespace WebCrawler
 
                 var peopleDetailsCTO = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, "CTO", delayUserInteraction);
                 peopleList.CompanyListingsList.AddRange(peopleDetailsCTO);
-
-
             }
             SeleniumTestsHelpers.WriteToFile(peopleList, newFile);
         }
