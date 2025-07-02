@@ -256,6 +256,50 @@ public class CompanyContactsAPI
         }
     }
 
+
+    public List<PeopleLinkedInDetail> CrawlCompanyLinkedInPageForUsersWithRole(string companyLinkedInUrl,string companyName, string role, int delayUserInteraction)
+    {
+        var res = new List<PeopleLinkedInDetail>();
+
+        // open companyLinkedInUrl/people
+
+        //crawl uses with role
+
+        // return user.
+
+
+        return res;
+    }
+
+    public CompanyLinkedInDetail CrawlCompanyLinkedInPage(string url, string companyName, int delayUserInteraction)
+    {
+        var res = new CompanyLinkedInDetail();
+        res.CompanyName = companyName;
+        res.LinkedInLink = url;
+        
+        // open url
+
+        // crawl company info "${url}/about/"
+        // contains about and a link to the company page
+
+        //crawl 
+
+
+        return res;
+    }
+
+    public string SearchAndReturnCompanyLinkedInPageTryDifferentSubstrings(string companyName, int delayUserInteraction)
+    {
+        string res = SearchAndReturnCompanyLinkedInPage(companyName, delayUserInteraction);
+
+        if (string.IsNullOrEmpty(res))
+        {
+            // try again
+            companyName = companyName.Replace(" AB", "").Replace(" Aktiebolag", "").Trim();
+            res = SearchAndReturnCompanyLinkedInPage(companyName, delayUserInteraction);
+        }
+        return res;
+    }
     public string SearchAndReturnCompanyLinkedInPage(string companyName, int delayUserInteraction)
     {
         CancellationToken cancellationToken = new CancellationToken();
@@ -534,8 +578,9 @@ public class CompanyContactsAPI
                         });
                     }
                 }
-                catch (NoSuchElementException)
+                catch (NoSuchElementException ex)
                 {
+                    Console.WriteLine($"NoSuchElementException occurred when looking for {companyNameWithoutCompanyForm} with keyWord {keyWord} exception  {ex.Message} ");
                     // Skip cards missing expected elements
                     continue;
                 }

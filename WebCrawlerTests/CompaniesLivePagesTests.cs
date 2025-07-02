@@ -38,7 +38,9 @@ namespace WebCrawler
         [Category("live")]
         [TestCase("Connectitude AB","CTO", "Joel Fjordén", 2000)]
         [TestCase("Connectitude AB", "CEO", "Richard Houltz", 2000)]
-        public void ValidateLinkedInSearchForPeopleWithRoleAtCompany(string companyName, string role, string expectedName, int delayUserInteraction = 0)
+        [TestCase("house of test Consulting", "CEO", "Sebastian Thuné", 2000)]
+        [TestCase("house of test Consulting", "CEO", "Johan Magnusson", 2000)]
+        public void ValidateLinkedInSearchForPeopleWithRoleAtCompany(string companyName, string role, string expectedName, int delayUserInteraction = 2000)
         {
             var searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}{Uri.EscapeDataString(" ")}{role}&origin=GLOBAL_SEARCH_HEADER";
 
@@ -49,11 +51,17 @@ namespace WebCrawler
 
 
         [Category("live")]
-        [TestCase("Connectitude AB", "", 4000)]
-        [TestCase("Connectitude", "https://www.linkedin.com/company/connectitude/", 4000)]
+        [TestCase("Connectitude AB", "https://www.linkedin.com/company/connectitude/", 4000)]
+        [TestCase("QlikTech International AB", "https://www.linkedin.com/company/qliktech-international-ab/", 4000)] // should be QLIK
+        [TestCase("Ubisoft Entertainment Sweden AB", "https://www.linkedin.com/company/massiveentertainment/", 4000)]
+        [TestCase("Lime Technologies Sweden AB", "https://www.linkedin.com/company/limetechnologies/", 4000)]
+        [TestCase("TNGSTN Sweden Services AB", "adsdfsdf", 4000)]
+        [TestCase("AppLogic Sweden AB ", "https://www.linkedin.com/company/applogicnetworks", 4000)]
+        [TestCase("Vitec Unikum Datasystem Aktiebolag", "https://www.linkedin.com/company/unikum/", 4000)]
+        [TestCase("Axiell Sverige AB", "https://www.linkedin.com/company/axiell-sverige/", 4000)]
         public void ValidateLinkedInSearchForCompany(string companyName, string expectedUrl, int delayUserInteraction = 0)
         {
-            var res = _companyAPI.SearchAndReturnCompanyLinkedInPage(companyName, delayUserInteraction);
+            var res = _companyAPI.SearchAndReturnCompanyLinkedInPageTryDifferentSubstrings(companyName, delayUserInteraction);
             Assert.That(res, Is.EqualTo(expectedUrl));
         }
 
