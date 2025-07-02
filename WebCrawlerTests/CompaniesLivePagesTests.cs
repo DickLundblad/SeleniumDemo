@@ -56,7 +56,7 @@ namespace WebCrawler
         [TestCase("Ubisoft Entertainment Sweden AB", "https://www.linkedin.com/company/massiveentertainment/", 4000)]
         [TestCase("Lime Technologies Sweden AB", "https://www.linkedin.com/company/limetechnologies/", 4000)]
         [TestCase("TNGSTN Sweden Services AB", "adsdfsdf", 4000)]
-        [TestCase("AppLogic Sweden AB ", "https://www.linkedin.com/company/applogicnetworks", 4000)]
+        [TestCase("AppLogic Sweden AB ", "https://www.linkedin.com/company/applogicnetworks/", 4000)]
         [TestCase("Vitec Unikum Datasystem Aktiebolag", "https://www.linkedin.com/company/unikum/", 4000)]
         [TestCase("Axiell Sverige AB", "https://www.linkedin.com/company/axiell-sverige/", 4000)]
         public void ValidateLinkedInSearchForCompany(string companyName, string expectedUrl, int delayUserInteraction = 0)
@@ -65,14 +65,15 @@ namespace WebCrawler
             Assert.That(res, Is.EqualTo(expectedUrl));
         }
 
-        [TestCase("Axiell Sverige AB", "https://www.linkedin.com/company/axiell-sverige/", 4000)]
+        [TestCase("Axiell Sverige AB", "https://www.linkedin.com/company/axiell-sverige/", "http://www.axiell.se", 4000)]
         [Category("live")]
-        public void ValidateCompanyLinkedInDetailsForPage(string companyName, string linkedInUrl, int delayUserInteraction = 0)
+        public void ValidateCompanyLinkedInDetailsForPage(string companyName, string linkedInUrl, string expectedCompanyWebsite, int delayUserInteraction = 0)
         {
             var res = _companyAPI.CrawlCompanyLinkedInPage(linkedInUrl, companyName, delayUserInteraction);
 
             Assert.That(res.LinkedInLink, Is.EqualTo(linkedInUrl));
             Assert.That(res.CompanyName, Is.EqualTo(companyName));
+            Assert.That(res.CompanyWebsite, Is.EqualTo(expectedCompanyWebsite));
         }
 
         [OneTimeTearDown]

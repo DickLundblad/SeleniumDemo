@@ -1,4 +1,5 @@
 using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Wordprocessing;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Support.UI;
@@ -282,29 +283,17 @@ public class CompanyContactsAPI
         try
         {
             OpenChromeInstance();
-            // crawl company info "${url}/about/"
-            // contains about and a link to the company page
-            OpenPageRemovePopupsLookForBlockedEtc(url+ "/about", delayUserInteraction, cancellationToken);
+            OpenPageRemovePopupsLookForBlockedEtc(url + "/about", delayUserInteraction, cancellationToken);
+            //Thread.Sleep(delayUserInteraction);
 
-            // sort by Companies, the search url for Companies cant be used directly,
-            // so pressing the link to [Companies] is the only way to get the correct results
-            // The xPath does not work on this frame either so we have to use CSS selector
-           /* var filterButtons = driver.FindElements(By.CssSelector("button.search-reusables__filter-pill-button"));
-            foreach (var button in filterButtons)
-            {
-                var btnText = button.Text.Trim();
+            var mb1Div = driver.FindElement(By.CssSelector("div.mb6"));
+            var mb1Text = mb1Div.Text;
+            // get text after overview
+            res.CompanyWebsite = ParseWebsiteFromText(mb1Text);
+            res.Overview = mb1Text;
+            // get text after Website
 
-                if (btnText == "Companies")
-                {
-                    button.Click();
-                    break;
-                }
-            }
-            WebDriverWait wait = new(_driver, TimeSpan.FromSeconds(10));
-            var companyLink = wait.Until(d => d.FindElement(By.CssSelector("a[href*='linkedin.com/company/']")));
-            var href = companyLink.GetAttribute("href");
 
-            res = href;*/
         }
         catch (Exception ex)
         {
@@ -742,6 +731,21 @@ public class CompanyContactsAPI
         {
             Console.WriteLine($"No turnover amount found in the input text: {input}");
             return 0;
+        }
+    }
+
+    private string ParseWebsiteFromText(string input)
+    {
+        string regExp = @"Website\s*\n\s*(https?://[^\s]+)";
+        string website = ExtractUsingRegexp(input, regExp).Trim();
+        if (!string.IsNullOrEmpty(website))
+        {
+            return website;
+        }
+        else
+        {
+            Console.WriteLine($"No website found in the input text: {input}");
+            return string.Empty;
         }
     }
 

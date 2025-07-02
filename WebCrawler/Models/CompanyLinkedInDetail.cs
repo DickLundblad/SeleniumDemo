@@ -12,5 +12,6 @@
         public string LinkedInLink { get; set; } = string.Empty;
 
         public string CompanyWebsite { get; set; } = string.Empty;
+        public string Overview { get; set; } = string.Empty;
     }
 }
