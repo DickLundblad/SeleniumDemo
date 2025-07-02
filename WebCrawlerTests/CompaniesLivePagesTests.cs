@@ -65,6 +65,16 @@ namespace WebCrawler
             Assert.That(res, Is.EqualTo(expectedUrl));
         }
 
+        [TestCase("Axiell Sverige AB", "https://www.linkedin.com/company/axiell-sverige/", 4000)]
+        [Category("live")]
+        public void ValidateCompanyLinkedInDetailsForPage(string companyName, string linkedInUrl, int delayUserInteraction = 0)
+        {
+            var res = _companyAPI.CrawlCompanyLinkedInPage(linkedInUrl, companyName, delayUserInteraction);
+
+            Assert.That(res.LinkedInLink, Is.EqualTo(linkedInUrl));
+            Assert.That(res.CompanyName, Is.EqualTo(companyName));
+        }
+
         [OneTimeTearDown]
         public void TearDown()
         {

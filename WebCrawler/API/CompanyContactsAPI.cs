@@ -276,11 +276,43 @@ public class CompanyContactsAPI
         var res = new CompanyLinkedInDetail();
         res.CompanyName = companyName;
         res.LinkedInLink = url;
-        
-        // open url
 
-        // crawl company info "${url}/about/"
-        // contains about and a link to the company page
+        // open url
+        CancellationToken cancellationToken = new CancellationToken();
+        try
+        {
+            OpenChromeInstance();
+            // crawl company info "${url}/about/"
+            // contains about and a link to the company page
+            OpenPageRemovePopupsLookForBlockedEtc(url+ "/about", delayUserInteraction, cancellationToken);
+
+            // sort by Companies, the search url for Companies cant be used directly,
+            // so pressing the link to [Companies] is the only way to get the correct results
+            // The xPath does not work on this frame either so we have to use CSS selector
+           /* var filterButtons = driver.FindElements(By.CssSelector("button.search-reusables__filter-pill-button"));
+            foreach (var button in filterButtons)
+            {
+                var btnText = button.Text.Trim();
+
+                if (btnText == "Companies")
+                {
+                    button.Click();
+                    break;
+                }
+            }
+            WebDriverWait wait = new(_driver, TimeSpan.FromSeconds(10));
+            var companyLink = wait.Until(d => d.FindElement(By.CssSelector("a[href*='linkedin.com/company/']")));
+            var href = companyLink.GetAttribute("href");
+
+            res = href;*/
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+        return res;
+
+
 
         //crawl 
 
