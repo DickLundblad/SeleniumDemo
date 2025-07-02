@@ -2,8 +2,10 @@ using DocumentFormat.OpenXml.Bibliography;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Support.UI;
+using System;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
+using System.Threading;
 using WebCrawler;
 using WebCrawler.Models;
 
@@ -31,7 +33,6 @@ public class CompanyContactsAPI
         }
     }
 
-
     public void CrawlStartPageForCompany_Details_WriteToFile(string url, string selectorXPathForJobEntry, string selectorCSSPath, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true, CancellationToken cancellationToken = new CancellationToken())
     {
         List<CompanyListing> liveJobListings = OpenAndExtractCompanyListings(url, selectorXPathForJobEntry, selectorCSSPath, addDomainToJobPaths, delayUserInteraction, removeParams, cancellationToken);
@@ -40,115 +41,11 @@ public class CompanyContactsAPI
         SeleniumTestsHelpers.WriteListOfCompaniesToFile(liveJobListings, fileName, DEFAULT_SUBFOLDER_CompanyListing);
     }
 
-    /// <summary>
-    /// Validate that it's possible to performa a new live Company search and update existing result filre with new company listings.
-    /// </summary>
-    /// <param name="url"></param>
-    /// <param name="selectorXPathForJobEntry"></param>
-    /// <param name="selectorCSSPath"></param>
-    /// <param name="fileName"></param>
-    /// <param name="addDomainToJobPaths"></param>
-    /// <param name="delayUserInteraction"></param>
-    /// <param name="removeParams"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public string CrawlStartPageForCompany_Details_Update_Any_Existing_Files(string url, string selectorXPathForJobEntry, string selectorCSSPath, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true, CancellationToken cancellationToken = new CancellationToken())
-    {
-        List<CompanyListing> liveJobListings = OpenAndExtractCompanyListings(url, selectorXPathForJobEntry, selectorCSSPath, addDomainToJobPaths, delayUserInteraction, removeParams, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
-        var savedCompanyListings = SeleniumTestsHelpers.LoadCompanyListingsFromFile(fileName, DEFAULT_SUBFOLDER_CompanyListing);
-        var newCompanyListings = SeleniumTestsHelpers.ExtractUniqueCompanyListings(liveJobListings, savedCompanyListings.CompanyListingsList);
-        // find any lines that has been marked for Refresh
-        var exisingCompanyListingsToUpdate = SeleniumTestsHelpers.GetCompanyListingsToUpdate(savedCompanyListings.CompanyListingsList);
-        string returnMessage = "";
-        // process new Joblinks
-        if (newCompanyListings.Count > 0)
-        {
-            Console.WriteLine($"Number of new job listings to open and parse: {newCompanyListings.Count}");
-            foreach (var jobListing in newCompanyListings)
-            {
-                Thread.Sleep(delayUserInteraction);
-                cancellationToken.ThrowIfCancellationRequested();
-                /*var updatedCompanyListing = OpenAndParseJobLink(companyListing.NumberOfEmployes, delayUserInteraction, cancellationToken);
-                companyListing.Description = updatedCompanyListing.Description;
-                companyListing.TurnoverYear = updatedCompanyListing.TurnoverYear;
-                companyListing.Turnover = updatedCompanyListing.Turnover;
-                companyListing.Adress = updatedCompanyListing.Adress;
-                companyListing.CompanyName = updatedCompanyListing.CompanyName;
-                companyListing.SourceLink = updatedCompanyListing.SourceLink;
-                companyListing.Refresh = false;*/
-            }
-            var mergedList = SeleniumTestsHelpers.MergeCompanyListingsIgnoreAlreadyExisting(newCompanyListings, savedCompanyListings.CompanyListingsList);
-            SeleniumTestsHelpers.WriteListOfCompaniesToFile(mergedList, fileName, DEFAULT_SUBFOLDER_CompanyListing);
-            returnMessage += $"Existing nbr of Listings was {savedCompanyListings.CompanyListingsList.Count}, adding {newCompanyListings.Count}";
-        }
-        else
-        {
-            returnMessage = $"No new job listings found after comparing live with already existing companyListings on file: {fileName}";
-            Console.WriteLine($"No new job listings found after comparing live with already existing companyListings on file: {fileName}");
-        }
-
-        // process existing jobLinks that needs to be update
-        if (exisingCompanyListingsToUpdate.Count > 0)
-        {
-            Console.WriteLine($"Number of existing job listings to update: {exisingCompanyListingsToUpdate.Count}");
-            foreach (var companyListing in exisingCompanyListingsToUpdate)
-            {
-                ///# HACK need to re-think this method. a bit to complex
-                Thread.Sleep(delayUserInteraction);
-                cancellationToken.ThrowIfCancellationRequested();
-                var updatedCompanyListing = OpenAndParseJobLink(companyListing.SourceLink, delayUserInteraction, cancellationToken);
-                companyListing.Description = updatedCompanyListing.Description;
-                companyListing.TurnoverYear = updatedCompanyListing.TurnoverYear;
-                companyListing.Turnover = updatedCompanyListing.Turnover;
-                companyListing.Adress = updatedCompanyListing.Adress;
-                companyListing.CompanyName = updatedCompanyListing.CompanyName;
-                companyListing.SourceLink = updatedCompanyListing.SourceLink;
-                companyListing.Refresh = false;
-            }
-            var mergedList = SeleniumTestsHelpers.MergeCompanyListingsOverWriteAlreadyExisting(newCompanyListings, savedCompanyListings.CompanyListingsList);
-            SeleniumTestsHelpers.WriteListOfCompaniesToFile(mergedList, fileName, DEFAULT_SUBFOLDER_CompanyListing);
-            returnMessage += $" Existing nbr of Listings was {savedCompanyListings.CompanyListingsList.Count}, updating {exisingCompanyListingsToUpdate.Count} of them since they were marked for update";
-        }
-
-        return returnMessage;
-    }
-
 
     public void ParseLinkeInForPeopleForRole_WriteToFile(string url, string companyName, string role, string fileName, int delayUserInteraction = 0)
     {
         var res = OpenAndParseLinkedInForPeople(url, companyName, role, delayUserInteraction); 
         SeleniumTestsHelpers.WriteListOfLinkedInPeopleToFile(res, fileName, DEFAULT_SUBFOLDER_LINKEDIN_PEOPLE);
-
-    }
-
-
-    public void Dispose()
-    {
-        try
-        {
-            _driver?.Quit(); // ensures Chrome and chromedriver processes are terminated
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error while quitting driver: " + ex.Message);
-        }
-        finally
-        {
-            _driver?.Dispose();
-        }
-        // also kill andy "zombie" processes that might have been left behind
-        try
-        {
-            foreach (var process in System.Diagnostics.Process.GetProcessesByName("chromedriver"))
-            {
-                process.Kill();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error while killling chromedriver processes: " + ex.Message);
-        }
     }
 
 
@@ -324,6 +221,78 @@ public class CompanyContactsAPI
         return companyListings;
     }
 
+    private void OpenChromeInstance()
+    {
+        ((IJavaScriptExecutor)_driver).ExecuteScript("window.open();");
+        _driver.SwitchTo().Window(_driver.WindowHandles.Last());
+    }
+
+    private void OpenPageRemovePopupsLookForBlockedEtc(string url, int delayUserInteraction, CancellationToken cancellationToken = new CancellationToken())
+    {
+        try
+        {
+            OpenChromeInstance();
+            _driver.Navigate().GoToUrl(url);
+            AcceptPopups();
+            Thread.Sleep(delayUserInteraction);
+            cancellationToken.ThrowIfCancellationRequested();
+            WebDriverWait wait = new(_driver, TimeSpan.FromSeconds(10));
+            try
+            {
+                WaitForDocumentReady(wait);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during WaitForDocumentReady() : {ex.Message}");
+            }
+            if (BlockedInfoOnPage())
+            {
+                Console.WriteLine($"Blocked on jobLink page: {url}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+    }
+
+    public string SearchAndReturnCompanyLinkedInPage(string companyName, int delayUserInteraction)
+    {
+        CancellationToken cancellationToken = new CancellationToken();
+        string res = "";
+        var url = $"https://www.linkedin.com/search/results/all/?keywords={Uri.EscapeDataString(companyName)}";
+        try
+        {
+            OpenChromeInstance();
+            OpenPageRemovePopupsLookForBlockedEtc(url, delayUserInteraction, cancellationToken);
+
+            // sort by Companies, the search url for Companies cant be used directly,
+            // so pressing the link to [Companies] is the only way to get the correct results
+            // The xPath does not work on this frame either so we have to use CSS selector
+            var filterButtons = driver.FindElements(By.CssSelector("button.search-reusables__filter-pill-button"));
+            foreach (var button in filterButtons)
+            {
+                var btnText = button.Text.Trim();
+
+                if (btnText == "Companies")
+                {
+                    button.Click();
+                    break;
+                }
+            }
+            WebDriverWait wait = new(_driver, TimeSpan.FromSeconds(10));
+            var companyLink = wait.Until(d => d.FindElement(By.CssSelector("a[href*='linkedin.com/company/']")));
+            var href = companyLink.GetAttribute("href");
+
+            res = href;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+        return res;
+    }
+
     public List<PeopleLinkedInDetail> OpenAndParseLinkedInForPeople(string companyName, string role, int delayUserInteraction, CancellationToken cancellationToken = new CancellationToken())
     {
         // Use the LinkedIn search URL format for people
@@ -368,23 +337,35 @@ public class CompanyContactsAPI
         return res;
     }
 
-
-    private string ExtractEndDate()
+    public void Dispose()
     {
-        string response = string.Empty;
-        var bodyNode = _driver.FindElement(By.XPath("//body"));
-        string prompt = $@"extract end date from this text in the same language as the text: {bodyNode.Text}";
-        response = ChatGPTSearch(prompt);
-
-        // fallback solution using regex
-        if (string.IsNullOrEmpty(response))
+        try
         {
-            response = SeleniumTestsHelpers.ExtractApplyLatestInfo(bodyNode.Text);
+            _driver?.Quit(); // ensures Chrome and chromedriver processes are terminated
         }
-
-        Console.WriteLine($"Extracted End Date: {response}");
-        return response;
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error while quitting driver: " + ex.Message);
+        }
+        finally
+        {
+            _driver?.Dispose();
+        }
+        // also kill andy "zombie" processes that might have been left behind
+        try
+        {
+            foreach (var process in System.Diagnostics.Process.GetProcessesByName("chromedriver"))
+            {
+                process.Kill();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error while killling chromedriver processes: " + ex.Message);
+        }
     }
+
+
 
     private async Task<string> ChatGPTSearchAsync(string prompt)
     {
@@ -575,15 +556,7 @@ public class CompanyContactsAPI
 
         return res;
     }
-    private string ExtractPersonName(string companyName, string keyWord)
-    {
-        string res = string.Empty;
-        // Use [attribute="value"] CSS selector for data-view-name
-        var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
 
-
-        return res;
-    }
 
     private string TrimCompanyNameWithoutCompanyForm(string companyName)
     {
@@ -639,7 +612,7 @@ public class CompanyContactsAPI
     private string ParseCompanyDescriptionFromText(string input)
     {
         // TODO Implement
-        string orgNbr = "";
+        string orgNbr = "TODO Implement ParseCompanyDescriptionFromText";
 
         return orgNbr;
     }

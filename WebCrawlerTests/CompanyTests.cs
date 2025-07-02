@@ -6,8 +6,6 @@ namespace WebCrawler
     public class CompanyTests
     {
 
-
-
         [Test]
         public void ValidateThatDuplicatesCompaniesCantBeAddedToCollection()
         {
@@ -70,7 +68,7 @@ namespace WebCrawler
 
         [TestCase("merged.csv", "merged_filter_emp_and_turnover_applied")]
         [TestCase("merged_removed_duplicate_OrgNbr_2_2025-07-01_14-52-02.csv", "merged_filter_turnover_100_billion_applied")]
-        public void FilterExistingFile_NumberOfEmplyeesAndTurnover(string existingFile, string newFileName)
+        public void FilterExistingFile_ByTurnover(string existingFile, string newFileName)
         {
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string newFile = $"{newFileName}_{timestamp}.csv";
@@ -81,22 +79,15 @@ namespace WebCrawler
             // use filter on an existing file to create a new file with only the filtered items
             foreach (var company in allCompaniesListings.CompanyListingsList)
             {
-                //if (company.NumberOfEmployes > 2)
-                //{
-                    //100*1000 , the site use 1000 sek..so it's 100 billion SEK
-                    if (company.Turnover > 100*1000)
-                    {
-                        filteredCompanyListings.InsertOrUpdate(company);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Company {company.CompanyName} with OrgNumber {company.OrgNumber} has Turnover less than 1000 ({company.Turnover}) tkr and will not be included in the filtered list.");
-                    } 
-                /*}
+                //100*1000 , the site use 1000 sek..so it's 100 billion SEK
+                if (company.Turnover > 100 * 1000)
+                {
+                    filteredCompanyListings.InsertOrUpdate(company);
+                }
                 else
                 {
-                    Console.WriteLine($"Company {company.CompanyName} with OrgNumber {company.OrgNumber} has less than 2 employees and will not be included in the filtered list.");
-                }*/
+                    Console.WriteLine($"Company {company.CompanyName} with OrgNumber {company.OrgNumber} has Turnover less than 1000 ({company.Turnover}) tkr and will not be included in the filtered list.");
+                }
             }
             SeleniumTestsHelpers.WriteToFile(filteredCompanyListings, newFile);
         }
