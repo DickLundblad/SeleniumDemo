@@ -65,6 +65,7 @@ namespace WebCrawler
             Assert.That(res, Is.EqualTo(expectedUrl));
         }
 
+        [Category("live")]
         [TestCase("Axiell Sverige AB", "https://www.linkedin.com/company/axiell-sverige/", "http://www.axiell.se", 4000)]
         [TestCase("Lime Technologies Sweden AB", "https://www.linkedin.com/company/limetechnologies/", "https://www.lime-technologies.com/", 4000)]
         public void ValidateCompanyLinkedInDetailsForPage(string companyName, string linkedInUrl, string expectedCompanyWebsite, int delayUserInteraction = 0)
@@ -74,6 +75,16 @@ namespace WebCrawler
             Assert.That(res.LinkedInLink, Is.EqualTo(linkedInUrl));
             Assert.That(res.CompanyName, Is.EqualTo(companyName));
             Assert.That(res.CompanyWebsite, Is.EqualTo(expectedCompanyWebsite));
+        }
+
+        //        CrawlCompanyLinkedInPageForUsersWithRole
+        [Category("live")]
+        [Test]
+        public void CrawlCompanyLinkedInPageForUsersWithRole()
+        {
+            var res = _companyAPI.CrawlCompanyLinkedInPageForUsersWithRole("https://www.linkedin.com/company/house-of-test-consulting", "House of Test Consulting", "CEO", 4000);
+
+            Assert.That(res.Count, Is.EqualTo(1));
         }
 
         [OneTimeTearDown]

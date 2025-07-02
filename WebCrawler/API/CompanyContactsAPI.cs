@@ -258,18 +258,28 @@ public class CompanyContactsAPI
     }
 
 
-    public List<PeopleLinkedInDetail> CrawlCompanyLinkedInPageForUsersWithRole(string companyLinkedInUrl,string companyName, string role, int delayUserInteraction)
+    public List<PeopleLinkedInDetail> CrawlCompanyLinkedInPageForUsersWithRole(string url,string companyName, string keyWord, int delayUserInteraction)
     {
         var res = new List<PeopleLinkedInDetail>();
 
         // open companyLinkedInUrl/people
+        CancellationToken cancellationToken = new CancellationToken();
+        try
+        {
+            OpenChromeInstance();
+            OpenPageRemovePopupsLookForBlockedEtc(url + "/people/?" + keyWord, delayUserInteraction, cancellationToken);
 
-        //crawl uses with role
+            //crawl user with role
+            PeopleLinkedInDetail user = new PeopleLinkedInDetail();
+            res.Add(user);
 
-        // return user.
-
-
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
         return res;
+      
     }
 
     public CompanyLinkedInDetail CrawlCompanyLinkedInPage(string url, string companyName, int delayUserInteraction)
