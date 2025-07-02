@@ -66,7 +66,7 @@ namespace WebCrawler
         }
 
         [TestCase("Axiell Sverige AB", "https://www.linkedin.com/company/axiell-sverige/", "http://www.axiell.se", 4000)]
-        [Category("live")]
+        [TestCase("Lime Technologies Sweden AB", "https://www.linkedin.com/company/limetechnologies/", "https://www.lime-technologies.com/", 4000)]
         public void ValidateCompanyLinkedInDetailsForPage(string companyName, string linkedInUrl, string expectedCompanyWebsite, int delayUserInteraction = 0)
         {
             var res = _companyAPI.CrawlCompanyLinkedInPage(linkedInUrl, companyName, delayUserInteraction);
