@@ -1,6 +1,7 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
+using System.Linq;
 using WebCrawler.Models;
 
 namespace WebCrawler
@@ -77,14 +78,35 @@ namespace WebCrawler
             Assert.That(res.CompanyWebsite, Is.EqualTo(expectedCompanyWebsite));
         }
 
+
+        /*
+                 [TestCase("Connectitude AB","CTO", "Joel Fjordén", 2000)]
+        [TestCase("Connectitude AB", "CEO", "Richard Houltz", 2000)]
+        [TestCase("house of test Consulting", "CEO", "Sebastian Thuné", 2000)]
+        [TestCase("house of test Consulting", "CEO", "Johan Magnusson", 2000)]
+         */
+
+
         //        CrawlCompanyLinkedInPageForUsersWithRole
         [Category("live")]
-        [Test]
-        public void CrawlCompanyLinkedInPageForUsersWithRole()
+        [TestCase("https://www.linkedin.com/company/house-of-test-consulting", "House of Test Consulting", "CEO", "Sebastian Thune",4000)]
+        [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CEO", "Richard Houltz", 4000)]
+        [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CTO", "Joel Fjordén", 4000)]
+        public void CrawlCompanyLinkedInPageForUsersWithRole(string linkedInPage, string companyName, string keyWord, string expectedName, int delay)
         {
-            var res = _companyAPI.CrawlCompanyLinkedInPageForUsersWithRole("https://www.linkedin.com/company/house-of-test-consulting", "House of Test Consulting", "CEO", 4000);
+            List<PeopleLinkedInDetail> matchingProfiles = _companyAPI.CrawlCompanyLinkedInPageForUsersWithRole(linkedInPage, companyName, keyWord, 4000);
+            List<PeopleLinkedInDetail> res = _companyAPI.FilterOutMostRelevantMatchForRole(matchingProfiles, companyName, keyWord);
+
+            if (res.Count == 0)
+            {   // try again
+                companyName = companyName.Replace(" AB", "").Replace(" Aktiebolag", "").Trim();
+                res = _companyAPI.FilterOutMostRelevantMatchForRole(matchingProfiles, companyName, keyWord);
+            }
 
             Assert.That(res.Count, Is.EqualTo(1));
+            Assert.That(res.Any(e => e.Name == expectedName), $"Expected name '{expectedName}' not found in the results.");
+
+
         }
 
         [OneTimeTearDown]

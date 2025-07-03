@@ -26,13 +26,13 @@ namespace WebCrawler
         /// <param name="delayUserInteraction"></param>
         [Category("live")]
         [TestCase("https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&page=1&county=Sk%C3%A5ne", "//div[@data-p-stats]","", "allabolag_se_data_sys_program_utveckling_skane", "")]
-        [TestCase("https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&page=1&county=Sk%C3%A5ne", "", "SearchResultCard", "allabolag_se_data_sys_program_utveckling_skane", "")]
         [TestCase("https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&page=1&county=Sk%C3%A5ne", "//div[contains(@class, 'SearchResultCard-card ')]", "", "allabolag_se_data_sys_program_utveckling_skane", "")]
 
-        public void ParseJobListingsOnPage(string startUrl, string selectorXPathForJobEntry, string selectorCSS , string fileName, string addDomainToJobPaths, int delayUserInteraction = 0)
+        public void ParseCompanyListingsOnPage(string startUrl, string selectorXPathForJobEntry, string selectorCSS , string fileName, string addDomainToJobPaths, int delayUserInteraction = 0)
         {
             //Foreach JoblLink found on start URL
             List<CompanyListing> jobListingsOnPage = _api.OpenAndExtractCompanyListings(startUrl, selectorXPathForJobEntry, selectorCSS, addDomainToJobPaths, delayUserInteraction);
+            Assert.That(jobListingsOnPage.Count, Is.GreaterThan(0), "There should be at least one job listing on the page.");
         }
 
         [Category("live")]

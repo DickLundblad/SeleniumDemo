@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using WebCrawler;
 using WebCrawler.Models;
+//using static System.Net.WebRequestMethods;
 
 public class CompanyContactsAPI
 {
@@ -257,21 +258,47 @@ public class CompanyContactsAPI
         }
     }
 
+    /// <summary>
+    /// OF all the matches, filter out the most relevant and add the role for that linked in user
+    /// </summary>
+    /// <param name="listOfMatches"></param>
+    /// <param name="companyName"></param>
+    /// <param name="keyWord"></param>
+    /// <returns></returns>
+    public List<PeopleLinkedInDetail> FilterOutMostRelevantMatchForRole(List<PeopleLinkedInDetail> listOfMatches, string companyName, string keyWord)
+    {
+
+        var keywordLower = keyWord.ToLowerInvariant();
+        var companyLower = companyName.ToLowerInvariant();
+        var res = new List<PeopleLinkedInDetail>();
+
+        foreach (var match in listOfMatches)
+        {
+            var titleLower = match.Title.ToLowerInvariant();
+            if (titleLower.Contains(keywordLower) && titleLower.Contains(companyLower))
+            { 
+                res.Add(match);
+            }
+        }
+        return res;
+    }
 
     public List<PeopleLinkedInDetail> CrawlCompanyLinkedInPageForUsersWithRole(string url,string companyName, string keyWord, int delayUserInteraction)
     {
-        var res = new List<PeopleLinkedInDetail>();
+        List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
 
         // open companyLinkedInUrl/people
         CancellationToken cancellationToken = new CancellationToken();
+        string searchUrl = $"{url}/people/?keywords={keyWord}";
         try
         {
             OpenChromeInstance();
-            OpenPageRemovePopupsLookForBlockedEtc(url + "/people/?" + keyWord, delayUserInteraction, cancellationToken);
+            OpenPageRemovePopupsLookForBlockedEtc(searchUrl, delayUserInteraction, cancellationToken);
 
             //crawl user with role
             PeopleLinkedInDetail user = new PeopleLinkedInDetail();
-            res.Add(user);
+            var searchRes = ExtractLinkedInPersonsFromCompanyView(companyName, keyWord);
+            res.AddRange(searchRes);
 
         }
         catch (Exception ex)
@@ -399,7 +426,7 @@ public class CompanyContactsAPI
             }
             if (BlockedInfoOnPage())
             {
-                Console.WriteLine($"Blocked on jobLink page: {url}");
+                Console.WriteLine($"Blocked on  page: {url}");
             }
             res = ExtractLinkedInPersons(companyName, role);
 
@@ -407,7 +434,7 @@ public class CompanyContactsAPI
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Warning Exception OpenAndParseJobLink({url}) , exception message: {ex.Message}");
+            Console.WriteLine($"Warning Exception OpenAndParseLinkedInForPeople({url}) , exception message: {ex.Message}");
         }
         return res;
     }
@@ -569,18 +596,65 @@ public class CompanyContactsAPI
     /// <param name="keyWord"></param>
     /// <returns></returns>
     /// 
-    private List<PeopleLinkedInDetail> ExtractLinkedInPersons(string companyName, string keyWord)
+
+    //    var profileCards = driver.FindElements(By.CssSelector("li.org-people-profile-card__profile-card-spacing"));
+
+    //foreach (var card in profileCards)
+    //{
+    //    var nameEl = card.FindElement(By.CssSelector(".artdeco-entity-lockup__title div.lt-line-clamp--single-line"));
+    //    string name = nameEl.Text;
+    //    Console.WriteLine(name);
+    //}
+    private List<PeopleLinkedInDetail> ExtractLinkedInPersonsFromCompanyView(string companyName, string keyWord)
     {
         List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
-        var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
+        //var userCards = driver.FindElements(By.CssSelector(".artdeco-entity-lockup__content"));
+        var userCards = driver.FindElements(By.CssSelector("li.org-people-profile-card__profile-card-spacing"));
+
+        foreach (var card in userCards)
+        {
+            // Namn
+            var name = card.FindElement(By.CssSelector(".lt-line-clamp--single-line.t-black")).Text;
+
+            // Titel
+            var title = card.FindElement(By.CssSelector(".lt-line-clamp--multi-line")).Text;
+
+            // Profil-länk
+            var profileUrl = card.FindElement(By.CssSelector("a.link-without-visited-state")).GetAttribute("href");
+
+            Console.WriteLine($"Name: {name}");
+            Console.WriteLine($"Title: {title}");
+            Console.WriteLine($"Profile: {profileUrl}");
+
+            res.Add(new PeopleLinkedInDetail
+            {
+                CompanyName = companyName.Trim(),
+                OrgNumber = string.Empty, // Org number not available in this context
+                LinkedInLink = profileUrl,
+                Email = string.Empty, // Email not available in this context
+                Title = title.Trim(),
+                Name = name.Trim()
+            });
+        }
+        return res;
+    }
+
+
+private List<PeopleLinkedInDetail> ExtractLinkedInPersons(string companyName, string keyWord)
+    {
+        List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
+        //var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
+        var userCards = _driver.FindElements(By.CssSelector("li.org-people-profile-card__profile-card-spacing"));
         var companyNameWithoutCompanyForm = TrimCompanyNameWithoutCompanyForm(companyName);
 
+        //var jobTitleDivName = "div.t-14.t-black.t-normal";
+        var jobTitleDivName = ".t-14.t-black--light.t-normal .lt-line-clamp--multi-line";
         foreach (var card in userCards)
         {
                 try
                 {
                     // Extract job title text
-                    var titleElement = card.FindElement(By.CssSelector("div.t-14.t-black.t-normal"));
+                    var titleElement = card.FindElement(By.CssSelector(jobTitleDivName));
                     var titleText = titleElement.Text;
 
                     if (titleText.Contains(keyWord, StringComparison.OrdinalIgnoreCase) &&
