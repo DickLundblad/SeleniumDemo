@@ -200,6 +200,9 @@ public class CompanyContactsAPI
         }
 
         Console.WriteLine($"Number of entries found: {companyNodes.Count}");
+
+        var industryTagsSelector = "div.IndustryTags-tags";
+        var industryTagsSpanSelector = "span.Tag-root.Tag-small.mui-arvehw";
         List<CompanyListing> companyListings = new();
         foreach (var node in companyNodes)
         {
@@ -216,9 +219,20 @@ public class CompanyContactsAPI
             companyListing.NumberOfEmployes = ParseNbrOfEmplyeesFromText(nodeText);
             companyListing.Adress = ParseAdressFromText(nodeText);
             companyListing.CompanyName = ParseCompanyNameFromText(nodeText);
-            // TODO add  IndustryTags-tags 
-            companyListings.Add(companyListing);
+            
+            var industryTag = node.FindElement(By.CssSelector(industryTagsSelector));
+            var industrySpans = industryTag.FindElements(By.CssSelector(industryTagsSpanSelector));
 
+            foreach (var tag in industrySpans)
+            {
+                var tagText = tag.Text.Trim();
+                if (!string.IsNullOrEmpty(tagText))
+                {
+                    companyListing.Description += $" {tagText}"; // Append tags to description
+                }
+            }
+
+            companyListings.Add(companyListing);
         }
 
         return companyListings;

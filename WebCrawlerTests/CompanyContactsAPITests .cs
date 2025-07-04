@@ -58,10 +58,11 @@ namespace WebCrawler
             Assert.That(File.Exists(fileAndPath), Is.True, "File should be created after parsing LinkedIn for people.");
         }
 
-
+        [Category("ResultFiles")]
         [Category("live")]
         [TestCase(31,"https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&county=Sk%C3%A5ne", "//div[@data-p-stats]", "allabolag_se_data_sys_program_utveckling_skane", "")]
         [TestCase(142, "https://www.allabolag.se/segmentering?revenueFrom=100000&revenueTo=1000000&location=Sk%C3%A5ne", "//div[contains(@class, 'SegmentationSearchResultCard-card')]", "allabolag_se_100_miljon_till_1000_miljoner_skane", "")]
+        [TestCase(204, "https://www.allabolag.se/segmentering?revenueFrom=100000&revenueTo=1000000&location=V%C3%A4stra%20G%C3%B6taland", "//div[contains(@class, 'SegmentationSearchResultCard-card')]", "allabolag_se_100_miljon_till_1000_miljoner_vastra_gotaland", "")]
         public void CrawlPageCountForCompany_Details__WriteToFile(int pageCount, string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true, string folderPathToResultFiles = "")
         {
             _api.CrawlStartPageForCompany_Details_WriteToFile(url, selectorXPathForJobEntry, "", fileName, addDomainToJobPaths, delayUserInteraction, removeParams);
@@ -73,6 +74,7 @@ namespace WebCrawler
             }
         }
 
+        [Category("ResultFiles")]
         [Category("live")]
         //[TestCase("merged_filter_emp_and_turnover_applied.csv", "LinkedInPeople",  2000)]
         [TestCase("TestMergeAllCVFilesToOne_2025-07-03_14-08-21.csv", "LinkedInPeople", 2000)]//merged_filter_turnover_100_billion_applied_2025-07-01_14-56-30
@@ -84,7 +86,7 @@ namespace WebCrawler
             PeopleLinkedInDetails peopleList = new("FilteredCompanies");
             int count = 0;
             int fileCounter = 1;
-            foreach (var company in allCompaniesListings.CompanyListingsList)
+            foreach (var company in allCompaniesListings.CompanyListingsList.OrderBy(e => e.CompanyName))
             {
                 count++;
                 // load batch, then sleep
@@ -117,15 +119,7 @@ namespace WebCrawler
             SeleniumTestsHelpers.WriteToFile(peopleList, $"{GenerateFileName(newFileName)}_{fileCounter}");
         }
 
-        [Category("live")]
-        [TestCase("Connectitude AB", "https://www.linkedin.com/company/connectitude/")]
-        public void FindCompanyOnLinkedIn(string companyName, string expectedUrl)
-        {
-            // TOD replace with crawl methods
-            var res = "https://www.linkedin.com/company/connectitude/";
 
-            Assert.That(res, Is.EqualTo(expectedUrl), "The LinkedIn URL for the company should match the expected URL.");
-        }
 
         [OneTimeTearDown]
         public void CloseChrome() 

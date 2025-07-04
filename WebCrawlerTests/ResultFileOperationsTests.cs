@@ -257,16 +257,19 @@ namespace WebCrawler
             Assert.That(updatedJobListingsFromFile.CompanyWithPeopleList.Count, Is.EqualTo(98), "The re-loaded CompanyWithPeople from file does not contain the same number of objects.");
         }
 
+
         /// <summary>
         /// Merge all files into one CSV file.
         /// </summary>
         /// <param name="inputFolder"></param>
         [TestCase("CompanyListings")]
+        [TestCase("CompanyListingsVG")]
+        [TestCase("CompanyListingsSkane")]
         public void MergeAllCVFilesToOne(string inputFolder)
         {
-            string testName = "TestMergeAllCVFilesToOne";
+            string testName = "MergedFilesToOne";
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            string fileName = $"{testName}_{timestamp}.csv";
+            string fileName = $"{testName}_{inputFolder}_{timestamp}.csv";
             SeleniumTestsHelpers.MergeAllCVFilesToOne(inputFolder, fileName);
             var filePath = Path.Combine(SeleniumTestsHelpers.GetOutputFolderPath(), fileName);
             Assert.That(File.Exists(filePath), Is.True, $"The merged file {fileName} was not created successfully.");
