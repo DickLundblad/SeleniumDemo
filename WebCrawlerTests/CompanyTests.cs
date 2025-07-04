@@ -48,8 +48,10 @@ namespace WebCrawler
             Assert.That(findFileInfo.Length, Is.GreaterThan(0), "The file was not created.");
         }
 
-        [TestCase("merged.csv", "merged_removed_duplicate_OrgNbr")]
-        [TestCase("TestMergeAllCVFilesToOne_2025-07-01_14-47-58.csv", "merged_removed_duplicate_OrgNbr_2")]
+        //[TestCase("merged.csv", "merged_removed_duplicate_OrgNbr")]
+        //[TestCase("TestMergeAllCVFilesToOne_2025-07-01_14-47-58.csv", "merged_removed_duplicate_OrgNbr_2")]
+        [TestCase("MergedFilesToOne_CompanyListingsSkane_2025-07-04_12-55-07.csv", "removed_duplicate_MergedFilesToOne_CompanyListingsSkane_2025-07-04_12-55-07.csv")]
+        [TestCase("MergedFilesToOne_CompanyListingsVG_2025-07-04_12-55-04.csv", "removed_duplicate_MergedFilesToOne_MergedFilesToOne_CompanyListingsVG_2025-07-04_12-55-04.csv")]
         public void FilterExistingFile_RemoveDuplicateOrgNbr(string existingFile, string newFileName)
         {
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");

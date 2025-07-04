@@ -34,7 +34,7 @@ namespace WebCrawler
             List<CompanyListing> jobListingsOnPage = _api.OpenAndExtractCompanyListings(startUrl, selectorXPathForJobEntry, selectorCSS, addDomainToJobPaths, delayUserInteraction);
             Assert.That(jobListingsOnPage.Count, Is.GreaterThan(0), "There should be at least one job listing on the page.");
         }
-        ////div[contains(@class, 'SegmentationSearchResultCard-card')]
+
 
         [Category("live")]
         [TestCase("https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&page=1&county=Sk%C3%A5ne", "//div[@data-p-stats]", "allabolag_se_data_sys_program_utveckling_skane", "")]

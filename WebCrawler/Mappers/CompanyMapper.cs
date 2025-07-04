@@ -52,10 +52,23 @@ namespace WebCrawler.Mappers
                 }
                 if (listOfPeople.Count > 2)
                 {
-                    // If there are more than 2 people, we can handle them as needed.
+                    companyWithPeople.ContactEmail3 = listOfPeople[2].Email;
+                    companyWithPeople.ContactLinkedIn3 = listOfPeople[2].LinkedInLink;
+                    companyWithPeople.ContactTitle3 = listOfPeople[2].Title;
+                    companyWithPeople.ContactName3 = listOfPeople[2].Name;
+                    companyWithPeople.ContactRole3 = listOfPeople[2].Role;
+
+                }
+                if (listOfPeople.Count > 3)
+                {
+                    // If there are more than 3 people, we can handle them as needed.
                     // For now, we will just ignore them.
                     // You can extend this logic to handle more contacts if required.
-                    System.Console.WriteLine($"More than 2 contacts found for {companyListing.CompanyName}. Only the first two will be mapped.");
+                    System.Console.WriteLine($"More than 3 contacts found ({listOfPeople.Count}) for {companyListing.CompanyName}. Only the first three will be mapped.");
+                    foreach (var person in listOfPeople.Skip(3))
+                    {
+                        companyWithPeople.ExtraContacts += $"{person.Name} ({person.Role}), {person.Email},{person.Title}, {person.LinkedInLink}\n";
+                    }
                 }
             }
             
