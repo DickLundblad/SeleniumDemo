@@ -216,6 +216,7 @@ public class CompanyContactsAPI
             companyListing.NumberOfEmployes = ParseNbrOfEmplyeesFromText(nodeText);
             companyListing.Adress = ParseAdressFromText(nodeText);
             companyListing.CompanyName = ParseCompanyNameFromText(nodeText);
+            // TODO add  IndustryTags-tags 
             companyListings.Add(companyListing);
 
         }
@@ -643,12 +644,10 @@ public class CompanyContactsAPI
 private List<PeopleLinkedInDetail> ExtractLinkedInPersons(string companyName, string keyWord)
     {
         List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
-        //var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
-        var userCards = _driver.FindElements(By.CssSelector("li.org-people-profile-card__profile-card-spacing"));
+        var userCards = _driver.FindElements(By.CssSelector("div[data-view-name='search-entity-result-universal-template']"));
         var companyNameWithoutCompanyForm = TrimCompanyNameWithoutCompanyForm(companyName);
-
-        //var jobTitleDivName = "div.t-14.t-black.t-normal";
-        var jobTitleDivName = ".t-14.t-black--light.t-normal .lt-line-clamp--multi-line";
+        var jobTitleDivName = "div.t-14.t-black.t-normal";
+        
         foreach (var card in userCards)
         {
                 try
@@ -762,7 +761,7 @@ private List<PeopleLinkedInDetail> ExtractLinkedInPersons(string companyName, st
     private string ParseCompanyDescriptionFromText(string input)
     {
         // TODO Implement
-        string orgNbr = "TODO Implement ParseCompanyDescriptionFromText";
+        string orgNbr = "";
 
         return orgNbr;
     }

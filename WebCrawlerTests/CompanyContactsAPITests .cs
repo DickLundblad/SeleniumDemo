@@ -34,9 +34,11 @@ namespace WebCrawler
             List<CompanyListing> jobListingsOnPage = _api.OpenAndExtractCompanyListings(startUrl, selectorXPathForJobEntry, selectorCSS, addDomainToJobPaths, delayUserInteraction);
             Assert.That(jobListingsOnPage.Count, Is.GreaterThan(0), "There should be at least one job listing on the page.");
         }
+        ////div[contains(@class, 'SegmentationSearchResultCard-card')]
 
         [Category("live")]
         [TestCase("https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&page=1&county=Sk%C3%A5ne", "//div[@data-p-stats]", "allabolag_se_data_sys_program_utveckling_skane", "")]
+        [TestCase("https://www.allabolag.se/segmentering?revenueFrom=100000&revenueTo=1000000&location=Sk%C3%A5ne", "//div[contains(@class, 'SegmentationSearchResultCard-card')]", "allabolag_se_100_miljon_till_1000_miljoner_skane", "")]
         public void CrawlStartPageForCompany_Details__WriteToFile(string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true, string folderPathToResultFiles = "")
         {
             _api.CrawlStartPageForCompany_Details_WriteToFile(url, selectorXPathForJobEntry,"", fileName, addDomainToJobPaths, delayUserInteraction, removeParams);
@@ -59,6 +61,7 @@ namespace WebCrawler
 
         [Category("live")]
         [TestCase(31,"https://www.allabolag.se/bransch-s%C3%B6k?q=Datautveckling%2C%20systemutveckling%2C%20programutveckling&county=Sk%C3%A5ne", "//div[@data-p-stats]", "allabolag_se_data_sys_program_utveckling_skane", "")]
+        [TestCase(142, "https://www.allabolag.se/segmentering?revenueFrom=100000&revenueTo=1000000&location=Sk%C3%A5ne", "//div[contains(@class, 'SegmentationSearchResultCard-card')]", "allabolag_se_100_miljon_till_1000_miljoner_skane", "")]
         public void CrawlPageCountForCompany_Details__WriteToFile(int pageCount, string url, string selectorXPathForJobEntry, string fileName, string addDomainToJobPaths = "", int delayUserInteraction = 0, bool removeParams = true, string folderPathToResultFiles = "")
         {
             _api.CrawlStartPageForCompany_Details_WriteToFile(url, selectorXPathForJobEntry, "", fileName, addDomainToJobPaths, delayUserInteraction, removeParams);
@@ -72,34 +75,46 @@ namespace WebCrawler
 
         [Category("live")]
         //[TestCase("merged_filter_emp_and_turnover_applied.csv", "LinkedInPeople",  2000)]
-        [TestCase("merged_filter_turnover_100_billion_applied_2025-07-01_14-56-30.csv", "LinkedInPeople", 2000)]//merged_filter_turnover_100_billion_applied_2025-07-01_14-56-30
-        public void ParseCompanyFileAndFindLinkedInPeople(string existingFile, string newFileName, int delayUserInteractionMs = 0, int batchSize = 5, int sleepBetweenBatchMs= 1000 * 10)
+        [TestCase("TestMergeAllCVFilesToOne_2025-07-03_14-08-21.csv", "LinkedInPeople", 2000)]//merged_filter_turnover_100_billion_applied_2025-07-01_14-56-30
+        public void ParseCompanyFileAndFindLinkedInPeople(string existingFile, string newFileName, int delayUserInteractionMs = 0, int batchSizeCrawlLinkedIn = 5, int writeToFileAfterNbrOfCompanies = 10, int sleepBetweenBatchMs= 1000 * 10)
         {
-            string newFile = GenerateFileName(newFileName);
             CompanyListings allCompaniesListings = SeleniumTestsHelpers.LoadCompanyListingsFromFile(existingFile);
 
             // create result file
             PeopleLinkedInDetails peopleList = new("FilteredCompanies");
             int count = 0;
+            int fileCounter = 1;
             foreach (var company in allCompaniesListings.CompanyListingsList)
             {
                 count++;
                 // load batch, then sleep
-                if (count % batchSize == batchSize -1 )
+                if (count % batchSizeCrawlLinkedIn == batchSizeCrawlLinkedIn - 1 )
                 {
                     Thread.Sleep(1000*10);
                 }
 
-                // Parse LinkedIn for people
+                // Parse LinkedIn for people for different keywords
                 var trimmedCompanyName = company.CompanyName.Trim();
+                string[] keyWords = { "CEO", "CTO", "VD", "vVD"};
+                for (int i = 0; i < keyWords.Length; i++)
+                {
+                    var peopleDetails = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, keyWords[i], delayUserInteractionMs);
+                    if (peopleDetails.Count > 0)
+                    {
+                        peopleList.PeopleLinkedInDetailsList.AddRange(peopleDetails);
+                    }
+                }
 
-                var peopleDetailsCEO = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, "CEO", delayUserInteractionMs);
-                peopleList.PeopleLinkedInDetailsList.AddRange(peopleDetailsCEO);
-
-                var peopleDetailsCTO = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, "CTO", delayUserInteractionMs);
-                peopleList.PeopleLinkedInDetailsList.AddRange(peopleDetailsCTO);
+                // Write to file after a certain number of companies
+                if (count % writeToFileAfterNbrOfCompanies == writeToFileAfterNbrOfCompanies - 1 && peopleList.PeopleLinkedInDetailsList.Count > 0)
+                {
+                    var batchfileName = $"{GenerateFileName(newFileName)}_{fileCounter}";
+                    SeleniumTestsHelpers.WriteToFile(peopleList, batchfileName);
+                    peopleList.PeopleLinkedInDetailsList.Clear(); // Clear the list after writing to file
+                    fileCounter++;
+                }
             }
-            SeleniumTestsHelpers.WriteToFile(peopleList, newFile);
+            SeleniumTestsHelpers.WriteToFile(peopleList, $"{GenerateFileName(newFileName)}_{fileCounter}");
         }
 
         [Category("live")]
@@ -119,10 +134,16 @@ namespace WebCrawler
         }
 
 
-        private string GenerateFileName(string prefix, string fileEnding = ".csv")
+        private string GenerateFileName(string prefix)
         {
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            return $"{prefix}_{timestamp}{fileEnding}";
+            return $"{prefix}_{timestamp}";
+        }
+
+        private string GenerateFileNameWithEnding(string prefix, string fileEnding = ".csv")
+        {
+            string fileName = GenerateFileName(prefix);
+            return $"{fileName}{fileEnding}";
         }
     }
 }

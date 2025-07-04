@@ -318,7 +318,7 @@ namespace WebCrawler
                 }
             }
 
-            Console.WriteLine($"TSV file created: {filePath}");
+            Console.WriteLine($"CSV file created: {filePath} for CompanyListing");
             using (var reader = new StreamReader(filePath))
             using (var csvR = new CsvReader(reader, config))
             {

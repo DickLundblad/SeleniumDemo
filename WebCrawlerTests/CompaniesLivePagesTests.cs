@@ -80,10 +80,9 @@ namespace WebCrawler
 
 
         /*
-                 [TestCase("Connectitude AB","CTO", "Joel Fjordén", 2000)]
-        [TestCase("Connectitude AB", "CEO", "Richard Houltz", 2000)]
-        [TestCase("house of test Consulting", "CEO", "Sebastian Thuné", 2000)]
-        [TestCase("house of test Consulting", "CEO", "Johan Magnusson", 2000)]
+                  [TestCase("AppLogic Sweden AB ", "https://www.linkedin.com/company/applogicnetworks/", 4000)]
+        [TestCase("Vitec Unikum Datasystem Aktiebolag", "https://www.linkedin.com/company/unikum/", 4000)]
+        [TestCase("Axiell Sverige AB", "https://www.linkedin.com/company/axiell-sverige/", 4000)]
          */
 
 
@@ -92,15 +91,44 @@ namespace WebCrawler
         [TestCase("https://www.linkedin.com/company/house-of-test-consulting", "House of Test Consulting", "CEO", "Sebastian Thune",4000)]
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CEO", "Richard Houltz", 4000)]
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CTO", "Joel Fjordén", 4000)]
+        [TestCase("https://www.linkedin.com/company/applogicnetworks/", "AppLogic Sweden AB", "CTO", "A", 4000)]
+        [TestCase("https://www.linkedin.com/company/unikum/", "Vitec Unikum Datasystem Aktiebolag", "CTO", "B", 4000)]
+        [TestCase("https://www.linkedin.com/company/unikum/", "Vitec Unikum Datasystem Aktiebolag", "VD", "Annett Ahrberg", 4000)]
+        [TestCase("https://www.linkedin.com/company/axiell-sverige", "Axiell Sverige AB", "CTO", "C", 4000)]
+        [TestCase("https://www.linkedin.com/company/axiell-sverige", "Axiell Sverige AB", "CEO", "C", 4000)]
+        [TestCase("https://www.linkedin.com/company/axiell-group", "Axiell Group AB", "CEO", "Joel Sommerfeldt", 4000)]
+        [TestCase("https://www.linkedin.com/company/axiell-group", "Axiell Group AB", "CEO", "Maria Wasing", 4000)] // CEO not in title, but in description, she has the best match in linnked in search
+
         public void CrawlCompanyLinkedInPageForUsersWithRole(string linkedInPage, string companyName, string keyWord, string expectedName, int delay)
         {
             List<PeopleLinkedInDetail> matchingProfiles = _companyAPI.CrawlCompanyLinkedInPageForUsersWithRole(linkedInPage, companyName, keyWord, 4000);
+            if (matchingProfiles.Count == 0)
+            {
+                Assert.Fail($"No matching profiles found for company '{companyName}' with role '{keyWord}'.");
+            }
             List<PeopleLinkedInDetail> res = _companyAPI.FilterOutMostRelevantMatchForRole(matchingProfiles, companyName, keyWord);
 
             if (res.Count == 0)
             {   // try again
                 companyName = companyName.Replace(" AB", "").Replace(" Aktiebolag", "").Trim();
                 res = _companyAPI.FilterOutMostRelevantMatchForRole(matchingProfiles, companyName, keyWord);
+                if (res.Count ==0)
+                {
+                    string[] parts = companyName.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var part in parts)
+                    {
+                        companyName = part.Trim();
+                        if (string.IsNullOrEmpty(companyName)) continue;
+                       
+                        // try again with each part of the company name
+                        matchingProfiles = _companyAPI.CrawlCompanyLinkedInPageForUsersWithRole(linkedInPage, companyName, keyWord, 4000);
+                        if (matchingProfiles.Count == 0) continue;
+                        // filter out most relevant match
+                        res = _companyAPI.FilterOutMostRelevantMatchForRole(matchingProfiles, companyName, keyWord);
+                        if (res.Count > 0) break;
+                    }
+                    res = _companyAPI.FilterOutMostRelevantMatchForRole(matchingProfiles, companyName, keyWord);
+                }
             }
 
             Assert.That(res.Count, Is.EqualTo(1));
