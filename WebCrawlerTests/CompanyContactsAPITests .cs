@@ -45,13 +45,23 @@ namespace WebCrawler
         }
 
         [Category("live")]
+        [TestCase("https://www.linkedin.com/company/connectitude/","Connectitude AB", "CTO", "Joel Fjordén", 2000)]
+        [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CEO", "Richard Houltz", 2000)]
+        public void OpenAndParseLinkedInForCompanyPeople(string linkedinCompanyUrl,string companyName, string role, string expectedName, int delayUserInteraction = 0)
+        {
+            var searchUrl = $"";
+            var users = _api.CrawlCompanyLinkedInPageForUsersWithRole(linkedinCompanyUrl, companyName, role, delayUserInteraction);
+            Assert.That(users.Count(), Is.AtLeast(1), $"There should be at least one user with role {role} found on the LinkedIn page.");
+            Assert.That(users.Any(p => p.Name == expectedName), $"There should be at least one user with name {expectedName} found on the LinkedIn page.");
+        }
+
+        [Category("live")]
         [TestCase("Connectitude AB", "CTO", "Joel Fjordén", 2000)]
         [TestCase("Connectitude AB", "CEO", "Richard Houltz", 2000)]
         public void OpenAndParseLinkedInForPeople_WriteToFile(string companyName, string role, string expectedName, int delayUserInteraction = 0)
         {
             var randomName = Guid.NewGuid().ToString("N").Substring(0, 8);
             var fileName = "OpenAndParseLinkedInForPeople_WriteToFile" + "_" + role + "_" + randomName;
-            //var searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}&{role}&origin=GLOBAL_SEARCH_HEADER";
             var searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}{Uri.EscapeDataString(" ")}{role}&origin=GLOBAL_SEARCH_HEADER";
             _api.ParseLinkeInForPeopleForRole_WriteToFile(searchUrl, companyName, role, fileName, delayUserInteraction);
             var fileAndPath = "LinkedInPeople//" + fileName + ".csv";
@@ -94,7 +104,7 @@ namespace WebCrawler
 
             foreach (var company in companiesToCrawl)
             {
-                if (allAlreadyExistingPeopleDetails.PeopleLinkedInDetailsList.Any(p => p.CompanyName == company.CompanyName.Trim()))
+                if (allAlreadyExistingPeopleDetails.PeopleLinkedInDetailsList.Any(p => p.CompanyName.Trim() == company.CompanyName.Trim()))
                 {
                     // Skip companies that already have people listed
                     continue;
