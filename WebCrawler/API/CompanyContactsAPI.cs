@@ -43,6 +43,11 @@ public class CompanyContactsAPI
         SeleniumTestsHelpers.WriteListOfCompaniesToFile(liveJobListings, fileName, DEFAULT_SUBFOLDER_CompanyListing);
     }
 
+    public void ParseLinkeInCompanyPageForPeopleWithRole_WriteToFile(string url, string companyName, string role, string fileName, int delayUserInteraction = 0)
+    {
+        var res = CrawlCompanyLinkedInPageForUsersWithRole(url, companyName, role, delayUserInteraction); 
+        SeleniumTestsHelpers.WriteListOfLinkedInPeopleToFile(res, fileName, DEFAULT_SUBFOLDER_LINKEDIN_PEOPLE);
+    }
 
     public void ParseLinkeInForPeopleForRole_WriteToFile(string url, string companyName, string role, string fileName, int delayUserInteraction = 0)
     {

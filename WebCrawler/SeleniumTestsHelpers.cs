@@ -217,6 +217,7 @@ namespace WebCrawler
                 .ToList();
         }
 
+
         public static void WriteListOfLinkedInPeopleToFile(List<PeopleLinkedInDetail> results, string filePath, string subFolder = "")
         {
             if (!filePath.EndsWith(RESULT_FILE_ENDING))

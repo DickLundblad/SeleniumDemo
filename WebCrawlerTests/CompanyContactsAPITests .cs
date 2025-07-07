@@ -49,10 +49,24 @@ namespace WebCrawler
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CEO", "Richard Houltz", 2000)]
         public void OpenAndParseLinkedInForCompanyPeople(string linkedinCompanyUrl,string companyName, string role, string expectedName, int delayUserInteraction = 0)
         {
-            var searchUrl = $"";
             var users = _api.CrawlCompanyLinkedInPageForUsersWithRole(linkedinCompanyUrl, companyName, role, delayUserInteraction);
             Assert.That(users.Count(), Is.AtLeast(1), $"There should be at least one user with role {role} found on the LinkedIn page.");
             Assert.That(users.Any(p => p.Name == expectedName), $"There should be at least one user with name {expectedName} found on the LinkedIn page.");
+        }
+
+        [Category("live")]
+        [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CTO", "Joel Fjordén", 2000)]
+        [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CEO", "Richard Houltz", 2000)]
+        public void OpenAndParseLinkedInForCompanyPeople_WriteToFile(string linkedinCompanyUrl, string companyName, string role, string expectedName, int delayUserInteraction = 0)
+        {
+            var randomName = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var fileName = "OpenAndParseLinkedInForCompanyPeople_WriteToFile" + "_" + role + "_" + randomName;
+
+            _api.ParseLinkeInForPeopleForRole_WriteToFile(linkedinCompanyUrl, companyName, role, fileName, delayUserInteraction);
+
+
+            var fileAndPath = "LinkedInPeople//" + fileName + ".csv";
+            Assert.That(File.Exists(fileAndPath), Is.True, "File should be created after parsing LinkedIn for people.");
         }
 
         [Category("live")]
