@@ -1,5 +1,6 @@
 ﻿using OpenQA.Selenium;
 using WebCrawler.Models;
+using static CompanyContactsAPI;
 
 namespace WebCrawler
 {
@@ -49,7 +50,7 @@ namespace WebCrawler
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CEO", "Richard Houltz", 2000)]
         public void OpenAndParseLinkedInForCompanyPeople(string linkedinCompanyUrl,string companyName, string role, string expectedName, int delayUserInteraction = 0)
         {
-            var users = _api.CrawlCompanyLinkedInPageForUsersWithRole(linkedinCompanyUrl, companyName, role, delayUserInteraction);
+            var users = _api.CrawlCompanyLinkedInPageForUsersWithRole(linkedinCompanyUrl, companyName, role, GetLinkedInUserFromView.LinkedInCompanyView, delayUserInteraction);
             Assert.That(users.Count(), Is.AtLeast(1), $"There should be at least one user with role {role} found on the LinkedIn page.");
             Assert.That(users.Any(p => p.Name == expectedName), $"There should be at least one user with name {expectedName} found on the LinkedIn page.");
         }
@@ -57,6 +58,8 @@ namespace WebCrawler
         [Category("live")]
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CTO", "Joel Fjordén", 2000)]
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CEO", "Richard Houltz", 2000)]
+        [TestCase("https://www.linkedin.com/company/house-of-test-consulting/", "House Of Test Consulting AB", "CEO", "Sebastian Thuné", 2000)] //Current: CEO at House of Test Consulting
+
         public void OpenAndParseLinkedInForCompanyPeople_WriteToFile(string linkedinCompanyUrl, string companyName, string role, string expectedName, int delayUserInteraction = 0)
         {
             var randomName = Guid.NewGuid().ToString("N").Substring(0, 8);
@@ -67,6 +70,7 @@ namespace WebCrawler
 
             var fileAndPath = "LinkedInPeople//" + fileName + ".csv";
             Assert.That(File.Exists(fileAndPath), Is.True, "File should be created after parsing LinkedIn for people.");
+            //#BUG hack check contant in file
         }
 
         [Category("live")]
@@ -80,6 +84,7 @@ namespace WebCrawler
             _api.ParseLinkeInForPeopleForRole_WriteToFile(searchUrl, companyName, role, fileName, delayUserInteraction);
             var fileAndPath = "LinkedInPeople//" + fileName + ".csv";
             Assert.That(File.Exists(fileAndPath), Is.True, "File should be created after parsing LinkedIn for people.");
+            //#BUG hack check contant in file
         }
 
         [Category("ResultFiles")]
@@ -162,7 +167,7 @@ namespace WebCrawler
         [TestCase("AllCompanies_100_miljoner_till_1_miljard.csv", "LinkedInPeople", "ParseCompanyFileAndFindLinkedInPeople",  2000, 5,10,60,61)]//merged_filter_turnover_100_billion_applied_2025-07-01_14-56-30
         public void ParseCompanyFileAndFindLinkedInPeople(string existingFile, string newFileName = "LinkedInPeople", string subFolder = "ParseCompanyFileAndFindLinkedInPeople", int delayUserInteractionMs = 0, int batchSizeCrawlLinkedIn = 5, int writeToFileAfterNbrOfCompanies = 10, int startAtPercentOfFile = 0, int stopAtPercentOfFile = 0 )
         {
-            string[] keyWords = { "CEO", "CTO", "VD", "vVD" };
+            string[] keyWords = { "CEO", "CTO", "VD", "vVD", "teknologichef" };
             PeopleLinkedInDetails peopleList = new("FilteredCompanies");
             var companiesToCrawl = GetCompaniesToCrawl(existingFile, startAtPercentOfFile, stopAtPercentOfFile);
             int count = 0;

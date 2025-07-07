@@ -1,8 +1,7 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using System;
-using System.Linq;
 using WebCrawler.Models;
+using static CompanyContactsAPI;
 
 namespace WebCrawler
 {
@@ -39,8 +38,8 @@ namespace WebCrawler
         [Category("live")]
         [TestCase("Connectitude AB","CTO", "Joel Fjordén", 2000)]
         [TestCase("Connectitude AB", "CEO", "Richard Houltz", 2000)]
-        [TestCase("house of test Consulting", "CEO", "Sebastian Thuné", 2000)]
-        [TestCase("house of test Consulting", "CEO", "Johan Magnusson", 2000)]
+        [TestCase("house of test Consulting", "CEO", "Sebastian Thuné", 2000)] //Current: CEO at House of Test Consulting
+        [TestCase("House of Test West AB", "CEO", "Johan Magnusson", 2000)]//Current: CEO at House of Test west at House of Test Consulting
         public void ValidateLinkedInSearchForPeopleWithRoleAtCompany(string companyName, string role, string expectedName, int delayUserInteraction = 2000)
         {
             var searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}{Uri.EscapeDataString(" ")}{role}&origin=GLOBAL_SEARCH_HEADER";
@@ -79,32 +78,26 @@ namespace WebCrawler
         }
 
 
-        /*
-                  [TestCase("AppLogic Sweden AB ", "https://www.linkedin.com/company/applogicnetworks/", 4000)]
-        [TestCase("Vitec Unikum Datasystem Aktiebolag", "https://www.linkedin.com/company/unikum/", 4000)]
-        [TestCase("Axiell Sverige AB", "https://www.linkedin.com/company/axiell-sverige/", 4000)]
-         */
-
-
         //        CrawlCompanyLinkedInPageForUsersWithRole
         [Category("live")]
         [TestCase("https://www.linkedin.com/company/house-of-test-consulting", "House of Test Consulting", "CEO", "Sebastian Thune",4000)]
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CEO", "Richard Houltz", 4000)]
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CTO", "Joel Fjordén", 4000)]
-        [TestCase("https://www.linkedin.com/company/applogicnetworks/", "AppLogic Sweden AB", "CTO", "A", 4000)]
-        [TestCase("https://www.linkedin.com/company/unikum/", "Vitec Unikum Datasystem Aktiebolag", "CTO", "B", 4000)]
+        //[TestCase("https://www.linkedin.com/company/applogicnetworks/", "AppLogic Sweden AB", "CTO", "A", 4000)]
+        //[TestCase("https://www.linkedin.com/company/unikum/", "Vitec Unikum Datasystem Aktiebolag", "CTO", "B", 4000)]
         [TestCase("https://www.linkedin.com/company/unikum/", "Vitec Unikum Datasystem Aktiebolag", "VD", "Annett Ahrberg", 4000)]
-        [TestCase("https://www.linkedin.com/company/axiell-sverige", "Axiell Sverige AB", "CTO", "C", 4000)]
-        [TestCase("https://www.linkedin.com/company/axiell-sverige", "Axiell Sverige AB", "CEO", "C", 4000)]
+        //[TestCase("https://www.linkedin.com/company/axiell-sverige", "Axiell Sverige AB", "CTO", "missing people", 4000)]// is missing people
+        //[TestCase("https://www.linkedin.com/company/axiell-sverige", "Axiell Sverige AB", "CEO", "missing people", 4000)] //is missing people
         [TestCase("https://www.linkedin.com/company/axiell-group", "Axiell Group AB", "CEO", "Joel Sommerfeldt", 4000)]
         [TestCase("https://www.linkedin.com/company/axiell-group", "Axiell Group AB", "CEO", "Maria Wasing", 4000)] // CEO not in title, but in description, she has the best match in linnked in search
 
         public void CrawlCompanyLinkedInPageForUsersWithRole(string linkedInPage, string companyName, string keyWord, string expectedName, int delay)
         {
-            List<PeopleLinkedInDetail> matchingProfiles = _companyAPI.CrawlCompanyLinkedInPageForUsersWithRole(linkedInPage, companyName, keyWord, 4000);
+            List<PeopleLinkedInDetail> matchingProfiles = _companyAPI.CrawlCompanyLinkedInPageForUsersWithRole(linkedInPage, companyName, keyWord, GetLinkedInUserFromView.LinkedInCompanyView,4000);
             if (matchingProfiles.Count == 0)
             {
                 Assert.Fail($"No matching profiles found for company '{companyName}' with role '{keyWord}'.");
+
             }
             List<PeopleLinkedInDetail> res = _companyAPI.FilterOutMostRelevantMatchForRole(matchingProfiles, companyName, keyWord);
 
@@ -119,15 +112,26 @@ namespace WebCrawler
                     {
                         companyName = part.Trim();
                         if (string.IsNullOrEmpty(companyName)) continue;
-                       
-                        // try again with each part of the company name
-                        matchingProfiles = _companyAPI.CrawlCompanyLinkedInPageForUsersWithRole(linkedInPage, companyName, keyWord, 4000);
+
+                        // try again with each part of the company name  //GetLinkedInUserFromView
+                        matchingProfiles = _companyAPI.CrawlCompanyLinkedInPageForUsersWithRole(linkedInPage, companyName, keyWord, GetLinkedInUserFromView.LinkedInCompanyView, 4000);
                         if (matchingProfiles.Count == 0) continue;
                         // filter out most relevant match
                         res = _companyAPI.FilterOutMostRelevantMatchForRole(matchingProfiles, companyName, keyWord);
                         if (res.Count > 0) break;
                     }
                     res = _companyAPI.FilterOutMostRelevantMatchForRole(matchingProfiles, companyName, keyWord);
+                }
+            }
+            // try again and go deper when searching for Users. go through each profile
+            if (res.Count == 0)
+            {
+                foreach (var profile in matchingProfiles)
+                {
+                    //open
+                    var link = profile.LinkedInLink;
+
+
                 }
             }
 

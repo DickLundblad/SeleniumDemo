@@ -1,15 +1,8 @@
-using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.Wordprocessing;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Internal;
 using OpenQA.Selenium.Support.UI;
-using System;
-using System.ComponentModel;
 using System.Text.RegularExpressions;
-using System.Threading;
 using WebCrawler;
 using WebCrawler.Models;
-//using static System.Net.WebRequestMethods;
 
 public class CompanyContactsAPI
 {
@@ -45,7 +38,7 @@ public class CompanyContactsAPI
 
     public void ParseLinkeInCompanyPageForPeopleWithRole_WriteToFile(string url, string companyName, string role, string fileName, int delayUserInteraction = 0)
     {
-        var res = CrawlCompanyLinkedInPageForUsersWithRole(url, companyName, role, delayUserInteraction); 
+        var res = CrawlCompanyLinkedInPageForUsersWithRole(url, companyName, role, GetLinkedInUserFromView.LinkedInCompanyView, delayUserInteraction); 
         SeleniumTestsHelpers.WriteListOfLinkedInPeopleToFile(res, fileName, DEFAULT_SUBFOLDER_LINKEDIN_PEOPLE);
     }
 
@@ -303,7 +296,14 @@ public class CompanyContactsAPI
         return res;
     }
 
-    public List<PeopleLinkedInDetail> CrawlCompanyLinkedInPageForUsersWithRole(string url,string companyName, string keyWord, int delayUserInteraction)
+    public enum GetLinkedInUserFromView
+    {
+        LinkedInAll,
+        LinkedInCompanyView,
+        LinkedInPersonView,
+
+    }
+    public List<PeopleLinkedInDetail> CrawlCompanyLinkedInPageForUsersWithRole(string url,string companyName, string keyWord, GetLinkedInUserFromView linkedInView, int delayUserInteraction)
     {
         List<PeopleLinkedInDetail> res = new List<PeopleLinkedInDetail>();
 
@@ -317,7 +317,19 @@ public class CompanyContactsAPI
 
             //crawl user with role
             PeopleLinkedInDetail user = new PeopleLinkedInDetail();
-            var searchRes = ExtractLinkedInPersonsFromCompanyView(companyName, keyWord);
+            List<PeopleLinkedInDetail> searchRes;
+            
+            if (linkedInView == GetLinkedInUserFromView.LinkedInCompanyView)
+            {
+                searchRes = ExtractLinkedInPersonsFromCompanyView(companyName, keyWord);
+            }else if (linkedInView == GetLinkedInUserFromView.LinkedInPersonView)
+            {
+                searchRes = ExtractLinkedInPersons(companyName, keyWord);
+            }
+            else
+            {
+                searchRes = ExtractLinkedInPersons(companyName, keyWord);
+            }
             res.AddRange(searchRes);
 
         }
@@ -328,6 +340,7 @@ public class CompanyContactsAPI
         return res;
       
     }
+
 
     public CompanyLinkedInDetail CrawlCompanyLinkedInPage(string url, string companyName, int delayUserInteraction)
     {
@@ -356,13 +369,6 @@ public class CompanyContactsAPI
         {
             Console.WriteLine("Error: " + ex.Message);
         }
-        return res;
-
-
-
-        //crawl 
-
-
         return res;
     }
 
@@ -633,30 +639,38 @@ public class CompanyContactsAPI
 
         foreach (var card in userCards)
         {
-            // Namn
-            var name = card.FindElement(By.CssSelector(".lt-line-clamp--single-line.t-black")).Text;
-
-            // Titel
-            var title = card.FindElement(By.CssSelector(".lt-line-clamp--multi-line")).Text;
-
-            // Profil-länk
-            var profileUrl = card.FindElement(By.CssSelector("a.link-without-visited-state")).GetAttribute("href");
-
-            Console.WriteLine($"Name: {name}");
-            Console.WriteLine($"Title: {title}");
-            Console.WriteLine($"Profile: {profileUrl}");
-
-            res.Add(new PeopleLinkedInDetail
+            try
             {
-                CompanyName = companyName.Trim(),
-                OrgNumber = string.Empty, // Org number not available in this context
-                LinkedInLink = profileUrl,
-                Email = string.Empty, // Email not available in this context
-                Title = title.Trim(),
-                Name = name.Trim()
-            });
+                // Namn
+                var name = card.FindElement(By.CssSelector(".lt-line-clamp--single-line.t-black")).Text;
+
+                // Titel
+                var title = card.FindElement(By.CssSelector(".lt-line-clamp--multi-line")).Text;
+
+                // Profil-länk
+                var profileUrl = card.FindElement(By.CssSelector("a.link-without-visited-state")).GetAttribute("href");
+
+                Console.WriteLine($"Name: {name}");
+                Console.WriteLine($"Title: {title}");
+                Console.WriteLine($"Profile: {profileUrl}");
+
+                res.Add(new PeopleLinkedInDetail
+                {
+                    CompanyName = companyName.Trim(),
+                    OrgNumber = string.Empty, // Org number not available in this context
+                    LinkedInLink = profileUrl,
+                    Email = string.Empty, // Email not available in this context
+                    Title = title.Trim(),
+                    Name = name.Trim()
+                });
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"exception when looking for element, exception: {ex.Message}");
+            }
+
         }
-        return res;
+         return res;
     }
 
 
