@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.ExtendedProperties;
-using OpenQA.Selenium;
+﻿using OpenQA.Selenium;
 using WebCrawler.Models;
 
 namespace WebCrawler
@@ -78,16 +77,16 @@ namespace WebCrawler
 
         [Category("ResultFiles")]
         [Category("live")]
-        [TestCase("AllCompanies_100_miljoner_till_1_miljard.csv", "LinkedInPeople", 2000, 5, 10, 60, 62)]//merged_filter_turnover_100_billion_applied_2025-07-01_14-56-30
-        public void ParseCompanyFileAndFindLinkedInPeopleForNotAllreadyFound(string existingFile, string newFileName = "LinkedInPeople", int delayUserInteractionMs = 0, int batchSizeCrawlLinkedIn = 5, int writeToFileAfterNbrOfCompanies = 10, int startAtPercentOfFile = 0, int stopAtPercentOfFile = 0, int sleepBetweenBatchMs = 1000 * 10)
+        [TestCase("AllCompanies_100_miljoner_till_1_miljard.csv", "ParseCompanyFileAndFindLinkedInPeople", "LinkedInPeople", 2000, 5, 10, 62, 64)]
+        public void ParseCompanyFileAndFindLinkedInPeopleForNotAllreadyFound(string existingCompanyFile, string existingPeopleLinkedinFolder, string newFileName = "LinkedInPeople", int delayUserInteractionMs = 0, int batchSizeCrawlLinkedIn = 5, int writeToFileAfterNbrOfCompanies = 10, int startAtPercentOfFile = 0, int stopAtPercentOfFile = 0)
         {
             string[] keyWords = { "CEO", "CTO", "VD", "vVD" };
 
-            PeopleLinkedInDetails peopleList = new  PeopleLinkedInDetails(newFileName);
-            List<CompanyListing> companiesToCrawl = GetCompaniesToCrawl(existingFile, startAtPercentOfFile, stopAtPercentOfFile);
+            PeopleLinkedInDetails peopleDetails = new  PeopleLinkedInDetails(newFileName);
+            List<CompanyListing> companiesToCrawl = GetCompaniesToCrawl(existingCompanyFile, startAtPercentOfFile, stopAtPercentOfFile);
 
-            // TODO load from file and filter out companies that already have people listed
-
+            // Load PeopleLinkedInDetails from file and filter out companies that already have people listed
+            PeopleLinkedInDetails allAlreadyExistingPeopleDetails = SeleniumTestsHelpers.LoadPeoplesFromFolder(existingPeopleLinkedinFolder);
             //
 
             int count = 0;
@@ -95,6 +94,12 @@ namespace WebCrawler
 
             foreach (var company in companiesToCrawl)
             {
+                if (allAlreadyExistingPeopleDetails.PeopleLinkedInDetailsList.Any(p => p.CompanyName == company.CompanyName.Trim()))
+                {
+                    // Skip companies that already have people listed
+                    continue;
+                }
+
                 count++;
 
                 // Parse LinkedIn for people for different keywords
@@ -102,23 +107,27 @@ namespace WebCrawler
 
                 for (int i = 0; i < keyWords.Length; i++)
                 {
-                    var peopleDetails = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, keyWords[i], delayUserInteractionMs);
-                    if (peopleDetails.Count > 0)
+                    var peopleDetailList = _api.OpenAndParseLinkedInForPeople(trimmedCompanyName, keyWords[i], delayUserInteractionMs);
+                    if (peopleDetailList.Count > 0)
                     {
-                        peopleList.PeopleLinkedInDetailsList.AddRange(peopleDetails);
+                        // HACK se that correct method is used to add people details
+                        peopleDetails.PeopleLinkedInDetailsList.AddRange(peopleDetails.PeopleLinkedInDetailsList);
                     }
                 }
 
                 // Write to file after a certain number of companies
-                if (count % writeToFileAfterNbrOfCompanies == writeToFileAfterNbrOfCompanies - 1 && peopleList.PeopleLinkedInDetailsList.Count > 0)
+                if (count % writeToFileAfterNbrOfCompanies == writeToFileAfterNbrOfCompanies - 1 && peopleDetails.PeopleLinkedInDetailsList.Count > 0)
                 {
                     var batchfileName = $"{GenerateFileName(newFileName)}_{fileCounter}";
-                    SeleniumTestsHelpers.WriteToFile(peopleList, batchfileName);
-                    peopleList.PeopleLinkedInDetailsList.Clear(); // Clear the list after writing to file
+                    SeleniumTestsHelpers.WriteToFile(peopleDetails, batchfileName);
+                    peopleDetails.PeopleLinkedInDetailsList.Clear(); // Clear the list after writing to file
                     fileCounter++;
                 }
             }
-            SeleniumTestsHelpers.WriteToFile(peopleList, $"{GenerateFileName(newFileName)}_{fileCounter}");
+            if (peopleDetails.PeopleLinkedInDetailsList.Count > 0)
+            {
+                SeleniumTestsHelpers.WriteToFile(peopleDetails, $"{GenerateFileName(newFileName)}_{fileCounter}");
+            }
         }
 
 
@@ -126,8 +135,8 @@ namespace WebCrawler
         [Category("live")]
         //[TestCase("merged_filter_emp_and_turnover_applied.csv", "LinkedInPeople",  2000)]
         //[TestCase("TestMergeAllCVFilesToOne_2025-07-03_14-08-21.csv", "LinkedInPeople", 2000)]//merged_filter_turnover_100_billion_applied_2025-07-01_14-56-30
-        [TestCase("AllCompanies_100_miljoner_till_1_miljard.csv", "LinkedInPeople", 2000, 5,10,60,61)]//merged_filter_turnover_100_billion_applied_2025-07-01_14-56-30
-        public void ParseCompanyFileAndFindLinkedInPeople(string existingFile, string newFileName = "LinkedInPeople", int delayUserInteractionMs = 0, int batchSizeCrawlLinkedIn = 5, int writeToFileAfterNbrOfCompanies = 10, int startAtPercentOfFile = 0, int stopAtPercentOfFile = 0 )
+        [TestCase("AllCompanies_100_miljoner_till_1_miljard.csv", "LinkedInPeople", "ParseCompanyFileAndFindLinkedInPeople",  2000, 5,10,60,61)]//merged_filter_turnover_100_billion_applied_2025-07-01_14-56-30
+        public void ParseCompanyFileAndFindLinkedInPeople(string existingFile, string newFileName = "LinkedInPeople", string subFolder = "ParseCompanyFileAndFindLinkedInPeople", int delayUserInteractionMs = 0, int batchSizeCrawlLinkedIn = 5, int writeToFileAfterNbrOfCompanies = 10, int startAtPercentOfFile = 0, int stopAtPercentOfFile = 0 )
         {
             string[] keyWords = { "CEO", "CTO", "VD", "vVD" };
             PeopleLinkedInDetails peopleList = new("FilteredCompanies");
@@ -159,7 +168,7 @@ namespace WebCrawler
                     fileCounter++;
                 }
             }
-            SeleniumTestsHelpers.WriteToFile(peopleList, $"{GenerateFileName(newFileName)}_{fileCounter}");
+            SeleniumTestsHelpers.WriteToFile(peopleList, $"{GenerateFileName(newFileName)}_{fileCounter}",subFolder);
         }
 
 

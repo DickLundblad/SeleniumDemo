@@ -1,9 +1,7 @@
 ﻿using ClosedXML.Excel;
 using CsvHelper;
 using CsvHelper.Configuration;
-using DocumentFormat.OpenXml.Bibliography;
 using OpenQA.Selenium;
-using System;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -571,11 +569,52 @@ namespace WebCrawler
             Console.WriteLine($"file created: {filePath}");        
         }
 
+        public static PeopleLinkedInDetails LoadPeoplesFromFolder(string folderName)
+        {
+            PeopleLinkedInDetails res = new PeopleLinkedInDetails(folderName);
+            var files = Directory.GetFiles(folderName); // Get all files in the folde
+
+            foreach (var file in files)
+            {
+                var details = LoadPeoplesFromFile(file);
+                foreach (var detail in details.PeopleLinkedInDetailsList)
+                {
+                    res.InsertOrUpdate(detail);
+                }
+               
+            }
+            return res;
+        }
 
         public static PeopleLinkedInDetails LoadPeoplesFromFile(string fileName, string subFolder = "")
         {
             var nameWithoutFileExtension = Path.GetFileNameWithoutExtension(fileName);
-            var jobListings = new PeopleLinkedInDetails(nameWithoutFileExtension);
+            var peoples = new PeopleLinkedInDetails(nameWithoutFileExtension);
+
+            if (!fileName.EndsWith(RESULT_FILE_ENDING))
+            {
+                fileName += RESULT_FILE_ENDING;
+            }
+
+            if (!string.IsNullOrEmpty(subFolder))
+            {
+                fileName = Path.Combine(subFolder, fileName);
+            }   
+            if (File.Exists(fileName))
+            {
+                var res = LoadPeoplesFromFileLocal(fileName, subFolder);
+                return res;
+            }
+            else 
+            {
+                Console.WriteLine($"File not found: {fileName}");
+                return new PeopleLinkedInDetails("empty");
+            }
+        }
+        private static PeopleLinkedInDetails LoadPeoplesFromFileLocal(string fileName, string subFolder = "")
+        {
+            var nameWithoutFileExtension = Path.GetFileNameWithoutExtension(fileName);
+            var peopleListing = new PeopleLinkedInDetails(nameWithoutFileExtension);
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
@@ -600,7 +639,7 @@ namespace WebCrawler
                 {
                     try
                     {
-                        jobListings.PeopleLinkedInDetailsList = csv.GetRecords<PeopleLinkedInDetail>().ToList();
+                        peopleListing.PeopleLinkedInDetailsList = csv.GetRecords<PeopleLinkedInDetail>().ToList();
                     }
                     catch (Exception ex)
                     {
@@ -614,8 +653,8 @@ namespace WebCrawler
                 Console.WriteLine($"File not found: {fileName}");
             }
 
-            Console.WriteLine($"Loaded {jobListings.PeopleLinkedInDetailsList.Count} PeopleLinkedInDetails from file: {fileName}");
-            return jobListings;
+            Console.WriteLine($"Loaded {peopleListing.PeopleLinkedInDetailsList.Count} PeopleLinkedInDetails from file: {fileName}");
+            return peopleListing;
         }
         public static CompanyWithPeoples LoadCompanyWithPeoplesFromFile(string fileName, string subFolder = "")
         {
