@@ -33,6 +33,7 @@ public class CompanyContactsAPI
         SeleniumTestsHelpers.WriteListOfLinkedInPeopleToFile(res, fileName, DEFAULT_SUBFOLDER_LINKEDIN_PEOPLE);
     }
 
+
     public void ParseLinkeInForPeopleForRole_WriteToFile(string url, string companyName, string role, string fileName, int delayUserInteraction = 0)
     {
         var res = CrawlCompanyLinkedInPageForUsersWithRole(url, companyName, role, GetLinkedInUserFromView.LinkedInPersonView, delayUserInteraction);
@@ -552,6 +553,8 @@ public class CompanyContactsAPI
                 Console.WriteLine($"Name: {name}");
                 Console.WriteLine($"Title: {title}");
                 Console.WriteLine($"Profile: {profileUrl}");
+
+                // #TODO also open the profile link and extract CurrentJobTitle
 
                 var companyNameWithoutCompanyForm = TrimCompanyNameWithoutCompanyForm(companyName);
                 if (title.Contains(keyWord, StringComparison.OrdinalIgnoreCase) && title.Contains(companyNameWithoutCompanyForm, StringComparison.OrdinalIgnoreCase))
