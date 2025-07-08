@@ -220,6 +220,11 @@ namespace WebCrawler
 
         public static void WriteListOfLinkedInPeopleToFile(List<PeopleLinkedInDetail> results, string filePath, string subFolder = "")
         {
+            if (results.Count() == 0)
+            {
+                Console.WriteLine($"No PeopleLinkedInDetail to write to file, file will not be created: {filePath}. ");
+                return;
+            }
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {
                 filePath += RESULT_FILE_ENDING;
@@ -274,6 +279,11 @@ namespace WebCrawler
 
         public static void WriteListOfCompaniesToFile(List<CompanyListing> results, string filePath, string subFolder = "")
         {
+            if (results.Count() == 0)
+            {
+                Console.WriteLine($"No CompanyListings to write to file, file will not be created: {filePath}. ");
+                return;
+            }
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {
                 filePath += RESULT_FILE_ENDING;
@@ -305,7 +315,7 @@ namespace WebCrawler
                     // Remove invalid characters
                     jobListing.Description = RemoveInvalidChars(jobListing.Description);
                     jobListing.CompanyName = RemoveInvalidChars(jobListing.CompanyName);
-                    if (!string.IsNullOrEmpty(jobListing.OrgNumber)) 
+                    if (!string.IsNullOrEmpty(jobListing.OrgNumber))
                     {
                         csv.WriteRecord(jobListing);
                         csv.NextRecord();
@@ -330,6 +340,12 @@ namespace WebCrawler
 
         public static void WriteListOfJobsToFile(List<JobListing> results, string filePath, string subFolder="")
         {
+            if (results.Count() == 0)
+            {
+                Console.WriteLine($"No PeopleLinkedInDetail to write to file, file will not be created: {filePath}. ");
+                return;
+            }
+
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {
                 filePath += RESULT_FILE_ENDING;
@@ -386,6 +402,11 @@ namespace WebCrawler
 
         public static void WriteToFile(PeopleLinkedInDetails results, string filePath, string subFolder = "")
         {
+            if (results.PeopleLinkedInDetailsList.Count() == 0)
+            {
+                Console.WriteLine($"No PeopleLinkedInDetailsList to write to file, file will not be created: {filePath}. ");
+                return;
+            }
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {
                 filePath += RESULT_FILE_ENDING;
@@ -433,6 +454,11 @@ namespace WebCrawler
 
         public static void WriteToFile(CompanyListings results, string filePath, string subFolder = "")
         {
+            if (results.CompanyListingsList.Count() == 0)
+            {
+                Console.WriteLine($"No CompanyListingsList to write to file, file will not be created: {filePath}. ");
+                return;
+            }
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {
                 filePath += RESULT_FILE_ENDING;
@@ -479,6 +505,11 @@ namespace WebCrawler
 
         public static void WriteToFile(CompanyWithPeoples results, string filePath, string subFolder = "")
         {
+            if (results.CompanyWithPeopleList.Count() == 0)
+            {
+                Console.WriteLine($"No CompanyWithPeopleList to write to file, file will not be created: {filePath}. ");
+                return;
+            }
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {
                 filePath += RESULT_FILE_ENDING;
@@ -526,6 +557,11 @@ namespace WebCrawler
 
         public static void WriteToFile(JobListings results, string filePath, string subFolder = "")
         {
+            if (results.JobListingsList.Count() == 0)
+            {
+                Console.WriteLine($"No JobListingsList to write to file, file will not be created: {filePath}. ");
+                return;
+            }
             if (!filePath.EndsWith(RESULT_FILE_ENDING))
             {
                 filePath += RESULT_FILE_ENDING;

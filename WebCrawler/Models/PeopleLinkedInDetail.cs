@@ -18,6 +18,8 @@
         public string Email { get; set; } = string.Empty;
 
         public string Title { get; set; } = string.Empty;
+        public string CurrentJobTitle { get; set; } = string.Empty;
+        
 
         public string Name { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;

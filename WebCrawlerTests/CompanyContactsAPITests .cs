@@ -32,8 +32,8 @@ namespace WebCrawler
         public void ParseCompanyListingsOnPage(string startUrl, string selectorXPathForJobEntry, string selectorCSS, string fileName, string addDomainToJobPaths, int delayUserInteraction = 0)
         {
             //Foreach JoblLink found on start URL
-            List<CompanyListing> jobListingsOnPage = _api.OpenAndExtractCompanyListings(startUrl, selectorXPathForJobEntry, selectorCSS, addDomainToJobPaths, delayUserInteraction);
-            Assert.That(jobListingsOnPage.Count, Is.GreaterThan(0), "There should be at least one job listing on the page.");
+            List<CompanyListing> companyListingsOnPage = _api.OpenAndExtractCompanyListings(startUrl, selectorXPathForJobEntry, selectorCSS, addDomainToJobPaths, delayUserInteraction);
+            Assert.That(companyListingsOnPage.Count, Is.GreaterThan(0), "There should be at least one job listing on the page.");
         }
 
 
@@ -59,32 +59,30 @@ namespace WebCrawler
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CTO", "Joel Fjordén", 2000)]
         [TestCase("https://www.linkedin.com/company/connectitude/", "Connectitude AB", "CEO", "Richard Houltz", 2000)]
         [TestCase("https://www.linkedin.com/company/house-of-test-consulting/", "House Of Test Consulting AB", "CEO", "Sebastian Thuné", 2000)] //Current: CEO at House of Test Consulting
-
         public void OpenAndParseLinkedInForCompanyPeople_WriteToFile(string linkedinCompanyUrl, string companyName, string role, string expectedName, int delayUserInteraction = 0)
         {
             var randomName = Guid.NewGuid().ToString("N").Substring(0, 8);
             var fileName = "OpenAndParseLinkedInForCompanyPeople_WriteToFile" + "_" + role + "_" + randomName;
-
-            _api.ParseLinkeInForPeopleForRole_WriteToFile(linkedinCompanyUrl, companyName, role, fileName, delayUserInteraction);
-
-
+            _api.ParseLinkeInCompanyPageForPeopleWithRole_WriteToFile(linkedinCompanyUrl, companyName, role, fileName, delayUserInteraction);
+             
             var fileAndPath = "LinkedInPeople//" + fileName + ".csv";
             Assert.That(File.Exists(fileAndPath), Is.True, "File should be created after parsing LinkedIn for people.");
-            //#BUG hack check contant in file
-        }
+        } 
 
         [Category("live")]
         [TestCase("Connectitude AB", "CTO", "Joel Fjordén", 2000)]
         [TestCase("Connectitude AB", "CEO", "Richard Houltz", 2000)]
+        [TestCase("house of test Consulting", "CEO", "Sebastian Thuné", 2000)] //Current: CEO at House of Test Consulting
         public void OpenAndParseLinkedInForPeople_WriteToFile(string companyName, string role, string expectedName, int delayUserInteraction = 0)
         {
             var randomName = Guid.NewGuid().ToString("N").Substring(0, 8);
             var fileName = "OpenAndParseLinkedInForPeople_WriteToFile" + "_" + role + "_" + randomName;
             var searchUrl = $"https://www.linkedin.com/search/results/people/?keywords={Uri.EscapeDataString(companyName)}{Uri.EscapeDataString(" ")}{role}&origin=GLOBAL_SEARCH_HEADER";
             _api.ParseLinkeInForPeopleForRole_WriteToFile(searchUrl, companyName, role, fileName, delayUserInteraction);
+            
+            
             var fileAndPath = "LinkedInPeople//" + fileName + ".csv";
             Assert.That(File.Exists(fileAndPath), Is.True, "File should be created after parsing LinkedIn for people.");
-            //#BUG hack check contant in file
         }
 
         [Category("ResultFiles")]
